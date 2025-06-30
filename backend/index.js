@@ -1,4 +1,5 @@
 require('dotenv').config();
+const moment = require('moment');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -7,7 +8,6 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
 
-// Models
 const User = require('./models/User');
 const Attendance = require('./models/Attendance');
 
@@ -22,9 +22,12 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// --------------------
-// 🔐 Admin-only Web Auth Middleware
-// --------------------
+// EJS Layouts
+const expressLayouts = require('express-ejs-layouts');
+app.use(expressLayouts);
+app.set('layout', 'layout');
+
+// Admin-only middleware
 function requireAdminAuth(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.redirect('/admin/login');
@@ -37,9 +40,7 @@ function requireAdminAuth(req, res, next) {
   });
 }
 
-// --------------------
-// 🖥️ Admin Web Routes (LMS)
-// --------------------
+// Routes
 app.get('/', (req, res) => res.redirect('/admin/login'));
 
 app.get('/admin/login', (req, res) => {
@@ -48,7 +49,6 @@ app.get('/admin/login', (req, res) => {
 
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
-
   if (email !== process.env.ADMIN_EMAIL) {
     return res.render('login', { error: 'Access Denied: Not Admin' });
   }
@@ -71,9 +71,7 @@ app.get('/dashboard', requireAdminAuth, async (req, res) => {
   res.render('dashboard', { users });
 });
 
-// --------------------
-// 👤 Admin: Users CRUD
-// --------------------
+// Users CRUD
 app.get('/admin/users', requireAdminAuth, async (req, res) => {
   const users = await User.find();
   res.render('users', { users });
@@ -96,16 +94,14 @@ app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/users');
 });
 
-// --------------------
-// 🕓 Admin: Attendance Table + Filters
-// --------------------
+// Attendance with filters
 app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
-  const { name, date } = req.query;
+  const { name, date, range } = req.query;
   const query = {};
 
   if (name) {
-    const users = await User.find({ name: new RegExp(name, 'i') });
-    query.userId = { $in: users.map(u => u._id) };
+    const usersByName = await User.find({ name: new RegExp(name, 'i') });
+    query.userId = { $in: usersByName.map(u => u._id) };
   }
 
   if (date) {
@@ -114,14 +110,29 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
     query.date = { $gte: start, $lte: end };
+  } else if (range === 'today') {
+    const start = moment().startOf('day').toDate();
+    const end = moment().endOf('day').toDate();
+    query.date = { $gte: start, $lte: end };
+  } else if (range === 'week') {
+    const start = moment().subtract(7, 'days').startOf('day').toDate();
+    const end = moment().endOf('day').toDate();
+    query.date = { $gte: start, $lte: end };
+  } else if (range === 'month') {
+    const start = moment().subtract(30, 'days').startOf('day').toDate();
+    const end = moment().endOf('day').toDate();
+    query.date = { $gte: start, $lte: end };
   }
 
   const records = await Attendance.find(query).populate('userId');
+  const users = await User.find(); // ✅ REQUIRED
   res.render('attendance', {
     records,
+    users, // ✅ Pass to EJS
     filters: {
       name: name || '',
-      date: date || ''
+      date: date || '',
+      range: range || ''
     }
   });
 });
@@ -131,9 +142,7 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/attendance');
 });
 
-// --------------------
-// 📱 Mobile App API Routes
-// --------------------
+// Mobile APIs
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(401);
@@ -171,7 +180,6 @@ app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-
     if (!user) return res.status(401).json({ message: 'Invalid email' });
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -237,27 +245,19 @@ app.get('/attendance', async (req, res) => {
   }
 });
 
-// --------------------
-// ❌ 404 Fallback
-// --------------------
 app.use((req, res) => {
   res.status(404).send('<h2>404 - Page Not Found</h2><a href="/">Go Home</a>');
 });
 
-// --------------------
-// ✅ Connect MongoDB and Start Server
-// --------------------
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => {
-  console.log('✅ MongoDB connected');
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running at http://localhost:${PORT}`);
+// Connect Mongo
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB connected');
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running at http://localhost:${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
   });
-})
-.catch(err => {
-  console.error('❌ MongoDB connection error:', err.message);
-});

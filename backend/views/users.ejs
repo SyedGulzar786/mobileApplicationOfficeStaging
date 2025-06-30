@@ -1,64 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Manage Users</title>
-  <link rel="stylesheet" href="/styles.css">
-  <style>
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    form.inline { display: inline; }
-    .container { max-width: 800px; margin: auto; padding: 20px; }
-    input, button { padding: 6px; margin-right: 4px; }
-    h1, h2 { text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>User Management</h1>
+<% title = 'Users' %>
 
-    <!-- Create User -->
-    <h2>Add New User</h2>
-    <form method="POST" action="/admin/users">
-      <input type="text" name="name" placeholder="Name" required />
-      <input type="email" name="email" placeholder="Email" required />
-      <input type="text" name="role" placeholder="Role (optional)" />
-      <button type="submit">Add User</button>
-    </form>
 
-    <!-- List Users -->
-    <h2>All Users</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Role</th>
-          <th>Created</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% users.forEach(user => { %>
-          <tr>
-            <form method="POST" action="/admin/users/<%= user._id %>/edit">
-              <td><input type="text" name="name" value="<%= user.name %>" required /></td>
-              <td><input type="email" name="email" value="<%= user.email %>" required /></td>
-              <td><input type="text" name="role" value="<%= user.role || '' %>" /></td>
-              <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
-              <td>
-                <button type="submit">Update</button>
-            </form>
-            <form method="POST" action="/admin/users/<%= user._id %>/delete" class="inline" onsubmit="return confirm('Delete this user?')">
-              <button type="submit" style="background-color: red; color: white;">Delete</button>
-            </form>
-              </td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
+<h2>User Management</h2>
 
-    <a href="/dashboard">← Back to Dashboard</a>
+<form method="POST" action="/admin/users" class="mb-3">
+  <div class="row">
+    <div class="col">
+      <input type="text" name="name" class="form-control" placeholder="Name" required />
+    </div>
+    <div class="col">
+      <input type="email" name="email" class="form-control" placeholder="Email" required />
+    </div>
+    <div class="col">
+      <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
+    </div>
+    <div class="col">
+      <button type="submit" class="btn btn-primary">Add User</button>
+    </div>
   </div>
-</body>
-</html>
+</form>
+
+<table class="table table-bordered table-hover">
+  <thead>
+    <tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <% users.forEach(user => { %>
+      <tr>
+        <form method="POST" action="/admin/users/<%= user._id %>/edit">
+          <td><input type="text" name="name" value="<%= user.name %>" class="form-control" /></td>
+          <td><input type="email" name="email" value="<%= user.email %>" class="form-control" /></td>
+          <td><input type="text" name="role" value="<%= user.role || '' %>" class="form-control" /></td>
+          <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+          <td>
+            <button class="btn btn-success btn-sm">Update</button>
+        </form>
+        <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete this user?')">
+          <button class="btn btn-danger btn-sm">Delete</button>
+        </form>
+          </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

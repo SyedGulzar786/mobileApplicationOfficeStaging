@@ -5,3 +5,9 @@ bcrypt.hash('admin123', 10).then((hash) => {
   console.log('Your hashed password is:');
   console.log(hash);
 });
+
+// mongose connection temporary
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})

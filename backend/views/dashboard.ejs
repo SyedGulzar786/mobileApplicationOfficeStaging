@@ -1,37 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
-  <h1>Users Table</h1>
-  <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="filterTable()">
-  <table id="userTable">
-    <thead>
-      <tr><th>Name</th><th>Email</th><th>Role</th></tr>
-    </thead>
-    <tbody>
-      <% users.forEach(user => { %>
-        <tr>
-          <td><%= user.name %></td>
-          <td><%= user.email %></td>
-          <td><%= user.role || 'User' %></td>
-        </tr>
-      <% }) %>
-    </tbody>
-  </table>
-  <br>
-  <a href="/logout">Logout</a>
 
-  <script>
-    function filterTable() {
-      const input = document.getElementById("searchInput").value.toLowerCase();
-      const rows = document.querySelectorAll("#userTable tbody tr");
-      rows.forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
-      });
-    }
-  </script>
-</body>
-</html>
+<% title = 'Dashboard' %>
+
+<h2>User Management</h2>
+<input type="text" id="searchInput" placeholder="Search by name..." onkeyup="filterTable()">
+<table id="userTable">
+  <thead>
+    <tr><th>Name</th><th>Email</th><th>Role</th></tr>
+  </thead>
+  <tbody>
+    <% users.forEach(user => { %>
+      <tr>
+        <td><%= user.name %></td>
+        <td><%= user.email %></td>
+        <td><%= user.role || 'User' %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+
+<script>
+  function filterTable() {
+    const input = document.getElementById("searchInput").value.toLowerCase();
+    const rows = document.querySelectorAll("#userTable tbody tr");
+    rows.forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+    });
+  }
+</script>
