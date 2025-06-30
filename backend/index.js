@@ -40,16 +40,12 @@ function requireAdminAuth(req, res, next) {
 // --------------------
 // 🖥️ Admin Web Routes (LMS)
 // --------------------
-
-// Redirect base to login
 app.get('/', (req, res) => res.redirect('/admin/login'));
 
-// Admin login page
 app.get('/admin/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-// Admin login POST
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -65,13 +61,11 @@ app.post('/admin/login', async (req, res) => {
   res.redirect('/dashboard');
 });
 
-// Admin logout
 app.get('/logout', (req, res) => {
   res.clearCookie('token');
   res.redirect('/admin/login');
 });
 
-// Dashboard (admin home)
 app.get('/dashboard', requireAdminAuth, async (req, res) => {
   const users = await User.find();
   res.render('dashboard', { users });
@@ -138,10 +132,8 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
 });
 
 // --------------------
-// 📱 API Routes (Mobile App)
+// 📱 Mobile App API Routes
 // --------------------
-
-// Auth middleware for mobile app
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.sendStatus(401);
@@ -154,7 +146,6 @@ function authMiddleware(req, res, next) {
   });
 }
 
-// Register (mobile)
 app.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -176,7 +167,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login (mobile)
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -195,7 +185,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Mark attendance
 app.post('/attendance', authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
@@ -215,7 +204,6 @@ app.post('/attendance', authMiddleware, async (req, res) => {
   res.status(201).json(attendance);
 });
 
-// Get today's attendance
 app.get('/today', async (req, res) => {
   try {
     const todayStart = new Date().setHours(0, 0, 0, 0);
@@ -231,7 +219,6 @@ app.get('/today', async (req, res) => {
   }
 });
 
-// Get all users
 app.get('/users', async (req, res) => {
   try {
     const users = await User.find();
@@ -241,7 +228,6 @@ app.get('/users', async (req, res) => {
   }
 });
 
-// Get all attendance
 app.get('/attendance', async (req, res) => {
   try {
     const records = await Attendance.find().populate('userId');
@@ -259,9 +245,19 @@ app.use((req, res) => {
 });
 
 // --------------------
-// ✅ Start Server
+// ✅ Connect MongoDB and Start Server
 // --------------------
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('✅ MongoDB connected');
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running at http://localhost:${PORT}`);
+  });
+})
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err.message);
 });
