@@ -1,0 +1,52 @@
+# -------------------------------
+# Node.js (Backend)
+# -------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+.env
+.env.local
+dist/
+build/
+logs
+*.log
+
+# MongoDB local data (if any)
+dump/
+data/
+
+# -------------------------------
+# React Native / Expo (Frontend)
+# -------------------------------
+.expo/
+.expo-shared/
+*.tsbuildinfo
+*.log
+web-build/
+android/
+ios/
+
+# Metro / Watchman
+.cache/
+babel.config.js
+
+# React Native build artifacts
+*.gradle
+*.iml
+*.hprof
+*.lock
+
+# OS-generated
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# VSCode
+.vscode/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo

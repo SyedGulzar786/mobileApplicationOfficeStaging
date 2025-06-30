@@ -1,0 +1,58 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Records</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    form.inline { display: inline; }
+    .container { max-width: 900px; margin: auto; padding: 20px; }
+    input, button { padding: 6px; margin-right: 4px; }
+    h1, h2 { text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Attendance Records</h1>
+
+<!-- Filter Form -->
+<form method="GET" action="/admin/attendance" style="margin-bottom: 20px;">
+  <input type="text" name="name" placeholder="Filter by name" value="<%= filters.name %>" />
+  <input type="date" name="date" value="<%= filters.date %>" />
+  <button type="submit">Apply Filters</button>
+  <a href="/admin/attendance" style="margin-left: 10px;">Reset</a>
+</form>
+
+
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% records.forEach(record => { %>
+          <tr>
+            <td><%= record.userId?.name || 'Unknown' %></td>
+            <td><%= record.userId?.email || 'Unknown' %></td>
+            <td><%= new Date(record.date).toLocaleString() %></td>
+            <td>
+              <form method="POST" action="/admin/attendance/<%= record._id %>/delete" onsubmit="return confirm('Delete this attendance record?')" class="inline">
+                <button type="submit" style="background-color: red; color: white;">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <a href="/dashboard">← Back to Dashboard</a>
+  </div>
+</body>
+</html>
