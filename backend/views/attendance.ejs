@@ -1,24 +1,6 @@
-<% title = 'Attendance' %>
-
+<% title = 'Attendance Management' %>
 
 <h2>Attendance Management</h2>
-
-<form method="POST" action="/admin/users" class="mb-3">
-  <div class="row">
-    <div class="col">
-      <input type="text" name="name" class="form-control" placeholder="Name" required />
-    </div>
-    <div class="col">
-      <input type="email" name="email" class="form-control" placeholder="Email" required />
-    </div>
-    <div class="col">
-      <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
-    </div>
-    <div class="col">
-      <button type="submit" class="btn btn-primary">Add User</button>
-    </div>
-  </div>
-</form>
 
 <form method="GET" class="row g-2 mb-4" action="/admin/attendance">
   <div class="col-md-3">
@@ -30,9 +12,9 @@
   <div class="col-md-2">
     <select name="range" class="form-select">
       <option value="">Select Range</option>
-      <option value="today">Today</option>
-      <option value="week">Last Week</option>
-      <option value="month">Last Month</option>
+      <option value="today" <%= filters.range === 'today' ? 'selected' : '' %>>Today</option>
+      <option value="week" <%= filters.range === 'week' ? 'selected' : '' %>>Last Week</option>
+      <option value="month" <%= filters.range === 'month' ? 'selected' : '' %>>Last Month</option>
     </select>
   </div>
   <div class="col-md-2">
@@ -43,25 +25,40 @@
   </div>
 </form>
 
+<form method="POST" action="/admin/attendance/mark" class="row g-3 mb-4">
+  <div class="col-md-6">
+    <select name="userId" class="form-select" required>
+      <option value="">Select User to Mark Attendance</option>
+      <% users.forEach(user => { %>
+        <option value="<%= user._id %>"><%= user.name %> - <%= user.email %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-success">Mark Attendance</button>
+  </div>
+</form>
+
 <table class="table table-bordered table-hover">
   <thead>
-    <tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+    <tr>
+      <th>User</th>
+      <th>Email</th>
+      <th>Marked At</th>
+      <th>Actions</th>
+    </tr>
   </thead>
   <tbody>
-    <% users.forEach(user => { %>
+    <% records.forEach(record => { %>
       <tr>
-        <form method="POST" action="/admin/users/<%= user._id %>/edit">
-          <td><input type="text" name="name" value="<%= user.name %>" class="form-control" /></td>
-          <td><input type="email" name="email" value="<%= user.email %>" class="form-control" /></td>
-          <td><input type="text" name="role" value="<%= user.role || '' %>" class="form-control" /></td>
-          <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
-          <td>
-            <button class="btn btn-success btn-sm">Update</button>
-        </form>
-        <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete this user?')">
-          <button class="btn btn-danger btn-sm">Delete</button>
-        </form>
-          </td>
+        <td><%= record.userId?.name %></td>
+        <td><%= record.userId?.email %></td>
+        <td><%= new Date(record.date).toLocaleString() %></td>
+        <td>
+          <form method="POST" action="/admin/attendance/<%= record._id %>/delete" onsubmit="return confirm('Delete this attendance?')">
+            <button class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </td>
       </tr>
     <% }) %>
   </tbody>

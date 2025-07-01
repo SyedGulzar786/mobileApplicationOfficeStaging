@@ -158,6 +158,28 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/attendance');
 });
 
+app.post('/admin/attendance/mark', requireAdminAuth, async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.redirect('/admin/attendance');
+
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  const alreadyMarked = await Attendance.findOne({
+    userId,
+    date: { $gte: start, $lte: end },
+  });
+
+  if (alreadyMarked) {
+    return res.redirect('/admin/attendance'); // optionally flash error: already marked
+  }
+
+  await Attendance.create({ userId });
+  res.redirect('/admin/attendance');
+});
+
 // Mobile APIs
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
