@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title><%= title || 'Dashboard' %></title>
+  <!-- <title><%= title || 'Dashboard' %></title> -->
+  <% const pageTitle = typeof title !== 'undefined' ? title : 'Dashboard'; %>
+<title><%= pageTitle %></title>
+
   <link rel="stylesheet" href="/styles.css">
   <style>
     body { display: flex; margin: 0; }

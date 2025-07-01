@@ -1,6 +1,5 @@
 <% title = 'Users' %>
 
-
 <h2>User Management</h2>
 
 <form method="POST" action="/admin/users" class="mb-3">
@@ -10,6 +9,9 @@
     </div>
     <div class="col">
       <input type="email" name="email" class="form-control" placeholder="Email" required />
+    </div>
+    <div class="col">
+      <input type="password" name="password" class="form-control" placeholder="Password" required />
     </div>
     <div class="col">
       <input type="text" name="role" class="form-control" placeholder="Role (optional)" />

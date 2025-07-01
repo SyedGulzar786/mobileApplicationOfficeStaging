@@ -44,13 +44,14 @@ function requireAdminAuth(req, res, next) {
 app.get('/', (req, res) => res.redirect('/admin/login'));
 
 app.get('/admin/login', (req, res) => {
-  res.render('login', { error: null });
+  res.render('login', { title: 'Admin Login', error: null });
 });
+
 
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
   if (email !== process.env.ADMIN_EMAIL) {
-    return res.render('login', { error: 'Access Denied: Not Admin' });
+    return res.render('login', { title: 'Admin Login', error: 'Access Denied: Not Admin' });
   }
 
   const match = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
@@ -68,26 +69,40 @@ app.get('/logout', (req, res) => {
 
 app.get('/dashboard', requireAdminAuth, async (req, res) => {
   const users = await User.find();
-  res.render('dashboard', { users });
+  res.render('dashboard', { title: 'Dashboard', users });
 });
 
 // Users CRUD
 app.get('/admin/users', requireAdminAuth, async (req, res) => {
   const users = await User.find();
-  res.render('users', { users });
+  res.render('users', { title: 'Users', users });
 });
+
 
 app.post('/admin/users', requireAdminAuth, async (req, res) => {
-  const { name, email, role } = req.body;
-  await User.create({ name, email, role });
+  const { name, email, password, role } = req.body;
+
+  if (!password) return res.redirect('/admin/users'); // prevent empty password
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await User.create({ name, email, password: hashedPassword, role });
   res.redirect('/admin/users');
 });
 
+
 app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
-  const { name, email, role } = req.body;
-  await User.findByIdAndUpdate(req.params.id, { name, email, role });
+  const { name, email, role, password } = req.body;
+
+  const updateData = { name, email, role };
+
+  if (password && password.trim()) {
+    updateData.password = await bcrypt.hash(password, 10);
+  }
+
+  await User.findByIdAndUpdate(req.params.id, updateData);
   res.redirect('/admin/users');
 });
+
 
 app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
@@ -127,6 +142,7 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
   const records = await Attendance.find(query).populate('userId');
   const users = await User.find(); // ✅ REQUIRED
   res.render('attendance', {
+    title: 'Attendance',
     records,
     users, // ✅ Pass to EJS
     filters: {
