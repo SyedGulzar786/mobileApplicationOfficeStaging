@@ -184,24 +184,6 @@ app.post('/admin/attendance/mark', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/attendance');
 });
 
-app.post('/reset-password', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
-  const { newPassword } = req.body;
-
-  if (!newPassword || newPassword.length < 6) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters' });
-  }
-
-  const hashed = await bcrypt.hash(newPassword, 10);
-
-  await User.findByIdAndUpdate(userId, {
-    password: newPassword,         // plain — for admin UI only
-    passwordHashed: hashed         // hashed — for login
-  });
-
-  res.json({ message: 'Password reset successful' });
-});
-
 // Mobile APIs
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
