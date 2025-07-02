@@ -1,47 +1,85 @@
-<% title = 'Users' %>
+<% title='Users' %>
 
-<h2>User Management</h2>
+  <h2>User Management</h2>
 
-<form method="POST" action="/admin/users" class="mb-3">
-  <div class="row">
-    <div class="col">
-      <input type="text" name="name" class="form-control" placeholder="Name" required />
+  <form method="POST" action="/admin/users" class="mb-3">
+    <div class="row">
+      <div class="col">
+        <input type="text" name="name" class="form-control" placeholder="Name" required />
+      </div>
+      <div class="col">
+        <input type="email" name="email" class="form-control" placeholder="Email" required />
+      </div>
+      <div class="col">
+        <input type="password" name="password" class="form-control" placeholder="Password" required />
+      </div>
+      <div class="col">
+        <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
+      </div>
+      <div class="col">
+        <button type="submit" class="btn btn-primary">Add User</button>
+      </div>
     </div>
-    <div class="col">
-      <input type="email" name="email" class="form-control" placeholder="Email" required />
-    </div>
-    <div class="col">
-      <input type="password" name="password" class="form-control" placeholder="Password" required />
-    </div>
-    <div class="col">
-      <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
-    </div>
-    <div class="col">
-      <button type="submit" class="btn btn-primary">Add User</button>
-    </div>
-  </div>
-</form>
+  </form>
 
-<table class="table table-bordered table-hover">
-  <thead>
-    <tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr>
-  </thead>
-  <tbody>
-    <% users.forEach(user => { %>
+  <table class="table table-bordered table-hover">
+    <thead>
       <tr>
-        <form method="POST" action="/admin/users/<%= user._id %>/edit">
-          <td><input type="text" name="name" value="<%= user.name %>" class="form-control" /></td>
-          <td><input type="email" name="email" value="<%= user.email %>" class="form-control" /></td>
-          <td><input type="text" name="role" value="<%= user.role || '' %>" class="form-control" /></td>
-          <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
-          <td>
-            <button class="btn btn-success btn-sm">Update</button>
-        </form>
-        <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete this user?')">
-          <button class="btn btn-danger btn-sm">Delete</button>
-        </form>
-          </td>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Password</th>
+        <th>Created</th>
+        <th>Actions</th>
       </tr>
-    <% }) %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% users.forEach(user=> { %>
+        <tr>
+          <form method="POST" action="/admin/users/<%= user._id %>/edit">
+            <td><input type="text" name="name" value="<%= user.name %>" class="form-control" /></td>
+            <td><input type="email" name="email" value="<%= user.email %>" class="form-control" /></td>
+            <td><input type="text" name="role" value="<%= user.role || '' %>" class="form-control" /></td>
+            <!-- <td>
+            <div class="input-group">
+              <input type="password" id="pw-<%= user._id %>" value="<%= user.password %>" class="form-control" readonly />
+              <span class="input-group-text" style="cursor:pointer" onclick="togglePassword('<%= user._id %>')">👁️</span>
+            </div>
+          </td> -->
+            <td>
+              <div style="position: relative;">
+                <input type="password" id="pw-<%= user._id %>" class="form-control" value="<%= user.password %>"
+                  readonly />
+                <span onclick="togglePassword('<%= user._id %>')"
+                  style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
+              </div>
+            </td>
+
+            <td>
+              <%= new Date(user.createdAt).toLocaleDateString() %>
+            </td>
+            <td>
+              <button class="btn btn-success btn-sm">Update</button>
+          </form>
+          <form method="POST" action="/admin/users/<%= user._id %>/delete"
+            onsubmit="return confirm('Delete this user?')">
+            <button class="btn btn-danger btn-sm">Delete</button>
+          </form>
+          </td>
+        </tr>
+        <% }) %>
+    </tbody>
+  </table>
+
+  <!-- <script>
+    function togglePassword(userId) {
+      const input = document.getElementById('pw-' + userId);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
+  </script> -->
+  <script>
+  function togglePassword(id) {
+    const input = document.getElementById('pw-' + id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+</script>

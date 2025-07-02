@@ -78,31 +78,35 @@ app.get('/admin/users', requireAdminAuth, async (req, res) => {
   res.render('users', { title: 'Users', users });
 });
 
-
 app.post('/admin/users', requireAdminAuth, async (req, res) => {
   const { name, email, password, role } = req.body;
-
-  if (!password) return res.redirect('/admin/users'); // prevent empty password
+  if (!password) return res.redirect('/admin/users');
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  await User.create({ name, email, password: hashedPassword, role });
+
+  await User.create({
+    name,
+    email,
+    password,               // plain password
+    passwordHashed: hashedPassword,
+    role,
+  });
+
   res.redirect('/admin/users');
 });
 
-
 app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
   const { name, email, role, password } = req.body;
-
   const updateData = { name, email, role };
 
   if (password && password.trim()) {
-    updateData.password = await bcrypt.hash(password, 10);
+    updateData.password = password; // ✅ plain
+    updateData.passwordHashed = await bcrypt.hash(password, 10); // ✅ hashed
   }
 
   await User.findByIdAndUpdate(req.params.id, updateData);
   res.redirect('/admin/users');
 });
-
 
 app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
@@ -220,7 +224,8 @@ app.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ message: 'Invalid email' });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.passwordHashed);
     if (!isMatch) return res.status(401).json({ message: 'Invalid password' });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
