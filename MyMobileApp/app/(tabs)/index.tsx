@@ -151,29 +151,33 @@ export default function AuthAttendanceScreen() {
   };
 
   // Reset password
-  const resetPassword = async () => {
-    try {
-      const res = await fetch(`${API}/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ newPassword }),
-      });
+const resetPassword = async () => {
+  if (!email || !newPassword) {
+    Alert.alert('Error', 'Please enter your email and new password');
+    return;
+  }
 
-      const data = await res.json();
-      if (!res.ok) {
-        Alert.alert('Error', data.message || 'Reset failed');
-        return;
-      }
+  try {
+    const res = await fetch(`${API}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword }),
+    });
 
-      Alert.alert('Success', 'Password reset successfully');
-      setNewPassword('');
-    } catch (err) {
-      Alert.alert('Error', 'Reset failed');
+    const data = await res.json();
+
+    if (!res.ok) {
+      Alert.alert('Error', data.message || 'Reset failed');
+      return;
     }
-  };
+
+    Alert.alert('Success', data.message || 'Password reset successful');
+    setNewPassword('');
+  } catch (err) {
+    Alert.alert('Error', 'Something went wrong');
+  }
+};
+
 
   useEffect(() => {
     const loadToken = async () => {
@@ -188,60 +192,64 @@ export default function AuthAttendanceScreen() {
   }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {!isLoggedIn ? (
-        <View style={styles.card}>
-          <Text style={styles.title}>Login / Sign Up</Text>
-          <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
-          <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
+  <ScrollView contentContainerStyle={styles.container}>
+    {!isLoggedIn ? (
+      <View style={styles.card}>
+        <Text style={styles.title}>Login / Sign Up</Text>
+        <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
+        <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
+        <TextInput
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+        <Button title="Register" onPress={register} />
+        <View style={styles.space} />
+        <Button title="Login" onPress={login} />
+        <View style={styles.space} />
+        <Text style={styles.subtitle}>Reset Password</Text>
+        <View style={styles.passwordContainer}>
           <TextInput
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
+            placeholder="New Password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry={!showResetPassword}
+            style={styles.passwordInput}
           />
-          <Button title="Register" onPress={register} />
-          <View style={styles.space} />
-          <Button title="Login" onPress={login} />
+          <TouchableOpacity onPress={() => setShowResetPassword(!showResetPassword)}>
+            <Ionicons name={showResetPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
+          </TouchableOpacity>
         </View>
-      ) : (
-        <View style={{ width: '100%' }}>
-          <Button title="Mark Attendance" onPress={markAttendance} />
-          <View style={styles.space} />
-          <Button title="Logout" onPress={logout} color="#e74c3c" />
-          <Text style={styles.subtitle}>Today's Attendance:</Text>
-          {Array.isArray(attendance) && attendance.length > 0 ? (
-            attendance.map((record) => (
-              <View key={record._id} style={styles.recordRow}>
-                <Text>{record.userId?.name ?? 'Unknown'}</Text>
-                <Text style={styles.roleText}>{record.userId?.role ?? 'User'}</Text>
-                <Text style={styles.timeText}>
-                  {new Date(parseInt(record._id.substring(0, 8), 16) * 1000).toLocaleString()}
-                </Text>
-              </View>
-            ))
-          ) : (
-            <Text>No attendance records found</Text>
-          )}
+        <Button title="Reset Password" onPress={resetPassword} />
+      </View>
+    ) : (
+      <View style={styles.card}>
+        <Text style={styles.title}>Welcome!</Text>
+        <Button title="Mark Attendance" onPress={markAttendance} />
+        <View style={styles.space} />
+        <Button title="Logout" onPress={logout} />
+        <View style={styles.space} />
+        <Text style={styles.subtitle}>Today's Attendance</Text>
+        {attendance.length === 0 ? (
+          <Text>No attendance records for today.</Text>
+        ) : (
+          attendance.map((record) => (
+            <View key={record._id} style={styles.recordRow}>
+              <Text>
+                {record.userId?.name || 'Unknown User'}
+                {record.userId?.role ? (
+                  <Text style={styles.roleText}> ({record.userId.role})</Text>
+                ) : null}
+              </Text>
+            </View>
+          ))
+        )}
+      </View>
+    )}
+  </ScrollView>
 
-          <Text style={styles.subtitle}>Reset Password</Text>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              placeholder="New Password"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry={!showResetPassword}
-              style={styles.passwordInput}
-            />
-            <TouchableOpacity onPress={() => setShowResetPassword(!showResetPassword)}>
-              <Ionicons name={showResetPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
-            </TouchableOpacity>
-          </View>
-          <Button title="Reset Password" onPress={resetPassword} />
-        </View>
-      )}
-    </ScrollView>
   );
 }
 
