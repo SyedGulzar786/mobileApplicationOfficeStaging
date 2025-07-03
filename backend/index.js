@@ -228,13 +228,20 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashedPassword });
+    const user = await User.create({ 
+      name, 
+      email, 
+      password,             // plain text (for admin panel UI only)
+      passwordHashed: hashedPassword // ✅ actual login hash stored
+    });
 
     res.status(201).json({ message: 'User registered', userId: user._id });
   } catch (err) {
+    console.error('Registration error:', err);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
+
 
 app.post('/login', async (req, res) => {
   try {
