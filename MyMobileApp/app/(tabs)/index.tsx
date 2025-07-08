@@ -29,6 +29,7 @@ export default function AuthAttendanceScreen() {
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showpassword, setShowpassword] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -151,32 +152,32 @@ export default function AuthAttendanceScreen() {
   };
 
   // Reset password
-const resetPassword = async () => {
-  if (!email || !newPassword) {
-    Alert.alert('Error', 'Please enter your email and new password');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, newPassword }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      Alert.alert('Error', data.message || 'Reset failed');
+  const resetPassword = async () => {
+    if (!email || !newPassword) {
+      Alert.alert('Error', 'Please enter your email and new password');
       return;
     }
 
-    Alert.alert('Success', data.message || 'Password reset successful');
-    setNewPassword('');
-  } catch (err) {
-    Alert.alert('Error', 'Something went wrong');
-  }
-};
+    try {
+      const res = await fetch(`${API}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        Alert.alert('Error', data.message || 'Reset failed');
+        return;
+      }
+
+      Alert.alert('Success', data.message || 'Password reset successful');
+      setNewPassword('');
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
 
 
   useEffect(() => {
@@ -192,63 +193,77 @@ const resetPassword = async () => {
   }, []);
 
   return (
-  <ScrollView contentContainerStyle={styles.container}>
-    {!isLoggedIn ? (
-      <View style={styles.card}>
-        <Text style={styles.title}>Login / Sign Up</Text>
-        <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
-        <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-        <TextInput
+    <ScrollView contentContainerStyle={styles.container}>
+      {!isLoggedIn ? (
+        <View style={styles.card}>
+          <Text style={styles.title}>Login / Sign Up</Text>
+          <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
+          <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
+          {/* <TextInput
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           style={styles.input}
-        />
-        <Button title="Register" onPress={register} />
-        <View style={styles.space} />
-        <Button title="Login" onPress={login} />
-        <View style={styles.space} />
-        <Text style={styles.subtitle}>Reset Password</Text>
-        <View style={styles.passwordContainer}>
-          <TextInput
-            placeholder="New Password"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry={!showResetPassword}
-            style={styles.passwordInput}
-          />
-          <TouchableOpacity onPress={() => setShowResetPassword(!showResetPassword)}>
-            <Ionicons name={showResetPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
-          </TouchableOpacity>
+        /> */}
+          <View style={styles.passwordContainer}>
+            <TextInput
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showpassword}
+              style={styles.passwordInput}
+            />
+            <TouchableOpacity onPress={() => setShowpassword(!showpassword)}>
+              <Ionicons name={showpassword ? 'eye-off' : 'eye'} size={22} color="gray" />
+            </TouchableOpacity>
+          </View>
+          <Button title="Register" onPress={register} />
+          <View style={styles.space} />
+          <Button title="Login" onPress={login} />
+          <View style={styles.space} />
+          <Text style={styles.subtitle}>Reset Password</Text>
+          <View 
+          style={styles.passwordContainer}
+          >
+            <TextInput
+              placeholder="New Password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry={!showResetPassword}
+              style={styles.passwordInput}
+            />
+            <TouchableOpacity onPress={() => setShowResetPassword(!showResetPassword)}>
+              <Ionicons name={showResetPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
+            </TouchableOpacity>
+          </View>
+          <Button title="Reset Password" onPress={resetPassword} />
         </View>
-        <Button title="Reset Password" onPress={resetPassword} />
-      </View>
-    ) : (
-      <View style={styles.card}>
-        <Text style={styles.title}>Welcome!</Text>
-        <Button title="Mark Attendance" onPress={markAttendance} />
-        <View style={styles.space} />
-        <Button title="Logout" onPress={logout} />
-        <View style={styles.space} />
-        <Text style={styles.subtitle}>Today's Attendance</Text>
-        {attendance.length === 0 ? (
-          <Text>No attendance records for today.</Text>
-        ) : (
-          attendance.map((record) => (
-            <View key={record._id} style={styles.recordRow}>
-              <Text>
-                {record.userId?.name || 'Unknown User'}
-                {record.userId?.role ? (
-                  <Text style={styles.roleText}> ({record.userId.role})</Text>
-                ) : null}
-              </Text>
-            </View>
-          ))
-        )}
-      </View>
-    )}
-  </ScrollView>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.title}>Welcome!</Text>
+          <Button title="Mark Attendance" onPress={markAttendance} />
+          <View style={styles.space} />
+          <Button title="Logout" onPress={logout} />
+          <View style={styles.space} />
+          <Text style={styles.subtitle}>Today's Attendance</Text>
+          {attendance.length === 0 ? (
+            <Text>No attendance records for today.</Text>
+          ) : (
+            attendance.map((record) => (
+              <View key={record._id} style={styles.recordRow}>
+                <Text>
+                  {record.userId?.name || 'Unknown User'}
+                  {record.userId?.role ? (
+                    <Text style={styles.roleText}> ({record.userId.role})</Text>
+                  ) : null}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      )}
+    </ScrollView>
 
   );
 }
@@ -283,8 +298,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     width: '100%',
-    paddingHorizontal: 10,
+    paddingRight: 10,
     marginBottom: 10,
   },
-  passwordInput: { flex: 1, paddingVertical: 10 },
+  passwordInput: { flex: 1, paddingVertical: 10 , paddingHorizontal: 10 , marginRight: 10},
 });
