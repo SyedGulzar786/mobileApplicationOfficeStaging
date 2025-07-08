@@ -125,37 +125,37 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-const resetPassword = async () => {
-  if (!resetEmail || !newResetPassword || !resetName) {
-    Alert.alert('Error', 'Please fill all fields');
-    return;
-  }
-
-  if (newResetPassword !== confirmResetPassword) {
-    Alert.alert('Error', 'Passwords do not match');
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API}/reset-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: resetName, email: resetEmail, newPassword: newResetPassword }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      Alert.alert('Error', data.message || 'Reset failed');
+  const resetPassword = async () => {
+    if (!resetEmail || !newResetPassword || !resetName) {
+      Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
-    Alert.alert('Success', data.message || 'Password reset successful');
-    setIsReset(false);
-    setIsLogin(true);
-  } catch (err) {
-    Alert.alert('Error', 'Something went wrong');
-  }
-};
+    if (newResetPassword !== confirmResetPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: resetName, email: resetEmail, newPassword: newResetPassword }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        Alert.alert('Error', data.message || 'Reset failed');
+        return;
+      }
+
+      Alert.alert('Success', data.message || 'Password reset successful');
+      setIsReset(false);
+      setIsLogin(true);
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
 
 
   useEffect(() => {
@@ -169,6 +169,57 @@ const resetPassword = async () => {
     };
     loadToken();
   }, []);
+
+  const handleSignIn = async () => {
+    try {
+      const res = await fetch(`${API}/signin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        Alert.alert('Sign In Failed', data.message || 'Already signed in today');
+        return;
+      }
+
+      Alert.alert('Success', data.message || 'Signed in');
+      fetchToday(token!);
+    } catch (err) {
+      console.error('Sign In Error:', err);
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      const res = await fetch(`${API}/signout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        Alert.alert('Sign Out Failed', data.message || 'Already signed out or not signed in yet');
+        return;
+      }
+
+      Alert.alert('Success', data.message || 'Signed out');
+      fetchToday(token!);
+    } catch (err) {
+      console.error('Sign Out Error:', err);
+      Alert.alert('Error', 'Something went wrong');
+    }
+  };
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -284,6 +335,14 @@ const resetPassword = async () => {
         <View style={styles.card}>
           <Text style={styles.title}>Welcome!</Text>
           <Button title="Logout" onPress={logout} />
+
+          <View style={styles.space} />
+          {/* New Sign In & Sign Out Buttons */}
+          <Button title="Sign In" onPress={handleSignIn} color="#4CAF50" />
+          <View style={styles.space} />
+          <Button title="Sign Out" onPress={handleSignOut} color="#f44336" />
+          <View style={styles.space} />
+
           <View style={styles.space} />
           <Text style={styles.subtitle}>Attendance Records</Text>
 
@@ -424,5 +483,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
+  // space: { height: 10 },
 
 });
