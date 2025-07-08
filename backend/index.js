@@ -266,23 +266,69 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/attendance', authMiddleware, async (req, res) => {
+// app.post('/attendance', authMiddleware, async (req, res) => {
+//   const userId = req.user.id;
+
+//   const alreadyMarked = await Attendance.findOne({
+//     userId,
+//     date: {
+//       $gte: new Date().setHours(0, 0, 0, 0),
+//       $lte: new Date().setHours(23, 59, 59, 999),
+//     },
+//   });
+
+//   if (alreadyMarked) {
+//     return res.status(400).json({ message: 'Already marked today' });
+//   }
+
+//   const attendance = await Attendance.create({ userId });
+//   res.status(201).json(attendance);
+// });
+
+app.post('/attendance/signin', authMiddleware, async (req, res) => {
   const userId = req.user.id;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const alreadyMarked = await Attendance.findOne({
-    userId,
-    date: {
-      $gte: new Date().setHours(0, 0, 0, 0),
-      $lte: new Date().setHours(23, 59, 59, 999),
-    },
-  });
+  const existing = await Attendance.findOne({ userId, date: today });
 
-  if (alreadyMarked) {
-    return res.status(400).json({ message: 'Already marked today' });
+  if (existing) {
+    if (existing.signInAt) {
+      return res.status(400).json({ message: 'Already signed in today' });
+    } else {
+      existing.signInAt = new Date();
+      await existing.save();
+      return res.status(200).json({ message: 'Sign in time recorded' });
+    }
   }
 
-  const attendance = await Attendance.create({ userId });
-  res.status(201).json(attendance);
+  await Attendance.create({
+    userId,
+    date: today,
+    signInAt: new Date()
+  });
+
+  return res.status(201).json({ message: 'Signed in successfully' });
+});
+
+app.post('/attendance/signout', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const existing = await Attendance.findOne({ userId, date: today });
+
+  if (!existing || !existing.signInAt) {
+    return res.status(400).json({ message: 'You must sign in first before signing out' });
+  }
+
+  if (existing.signOutAt) {
+    return res.status(400).json({ message: 'Already signed out today' });
+  }
+
+  existing.signOutAt = new Date();
+  await existing.save();
+  return res.status(200).json({ message: 'Signed out successfully' });
 });
 
 app.get('/today', async (req, res) => {
