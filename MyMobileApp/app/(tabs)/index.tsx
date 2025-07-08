@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,22 +20,30 @@ type AttendanceRecord = {
   userId: {
     _id: string;
     name: string;
+    email: string;
     role?: string;
   } | null;
+  signedInAt?: string;
+  signedOutAt?: string;
 };
 
 export default function AuthAttendanceScreen() {
+  const [isReset, setIsReset] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showResetPassword, setShowResetPassword] = useState(false);
-  const [showpassword, setShowpassword] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Register
+  // Reset modal state
+  const [resetName, setResetName] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
+  const [newResetPassword, setNewResetPassword] = useState('');
+  const [confirmResetPassword, setConfirmResetPassword] = useState('');
+
   const register = async () => {
     try {
       const res = await fetch(`${API}/register`, {
@@ -44,20 +53,19 @@ export default function AuthAttendanceScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         Alert.alert('Error', data.message || 'Registration failed');
         return;
       }
 
       Alert.alert('Success', 'User registered. Now log in.');
+      setIsLogin(true);
     } catch (err) {
       console.error('Register error:', err);
       Alert.alert('Error', 'Registration failed');
     }
   };
 
-  // Login
   const login = async () => {
     try {
       const res = await fetch(`${API}/login`, {
@@ -67,14 +75,12 @@ export default function AuthAttendanceScreen() {
       });
 
       const text = await res.text();
-      console.log('Login response:', text);
-
       let data;
       try {
         data = JSON.parse(text);
-      } catch (err) {
+      } catch {
         console.error('Invalid JSON:', text);
-        Alert.alert('Error', 'Unexpected response from server');
+        Alert.alert('Error', 'Unexpected server response');
         return;
       }
 
@@ -94,55 +100,23 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-  // Logout
   const logout = async () => {
     await AsyncStorage.removeItem('token');
     setToken(null);
     setIsLoggedIn(false);
-    setName('');
     setEmail('');
     setPassword('');
     setAttendance([]);
     Alert.alert('Logged out');
   };
 
-  // Mark attendance
-  const markAttendance = async () => {
-    try {
-      const res = await fetch(`${API}/attendance`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        Alert.alert('Error', data.message || 'Attendance failed');
-        return;
-      }
-
-      Alert.alert('Success', 'Attendance marked');
-      if (token) {
-        fetchToday(token);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Could not mark attendance');
-    }
-  };
-
-  // Fetch attendance
   const fetchToday = async (tokenOverride?: string) => {
     try {
       const res = await fetch(`${API}/today`);
       const data = await res.json();
-
       if (Array.isArray(data)) {
         setAttendance(data);
       } else {
-        console.warn('Unexpected response from /today:', data);
         setAttendance([]);
       }
     } catch (err) {
@@ -151,33 +125,37 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-  // Reset password
-  const resetPassword = async () => {
-    if (!email || !newPassword) {
-      Alert.alert('Error', 'Please enter your email and new password');
+const resetPassword = async () => {
+  if (!resetEmail || !newResetPassword || !resetName) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
+
+  if (newResetPassword !== confirmResetPassword) {
+    Alert.alert('Error', 'Passwords do not match');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: resetName, email: resetEmail, newPassword: newResetPassword }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      Alert.alert('Error', data.message || 'Reset failed');
       return;
     }
 
-    try {
-      const res = await fetch(`${API}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        Alert.alert('Error', data.message || 'Reset failed');
-        return;
-      }
-
-      Alert.alert('Success', data.message || 'Password reset successful');
-      setNewPassword('');
-    } catch (err) {
-      Alert.alert('Error', 'Something went wrong');
-    }
-  };
+    Alert.alert('Success', data.message || 'Password reset successful');
+    setIsReset(false);
+    setIsLogin(true);
+  } catch (err) {
+    Alert.alert('Error', 'Something went wrong');
+  }
+};
 
 
   useEffect(() => {
@@ -196,68 +174,158 @@ export default function AuthAttendanceScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {!isLoggedIn ? (
         <View style={styles.card}>
-          <Text style={styles.title}>Login / Sign Up</Text>
-          <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
-          <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} />
-          {/* <TextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        /> */}
-          <View style={styles.passwordContainer}>
+          <Text style={styles.title}>
+            {isReset ? 'Reset Password' : isLogin ? 'Login' : 'Register'}
+          </Text>
+
+          {!isLogin && !isReset && (
             <TextInput
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showpassword}
-              style={styles.passwordInput}
+              placeholder="Name"
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
             />
-            <TouchableOpacity onPress={() => setShowpassword(!showpassword)}>
-              <Ionicons name={showpassword ? 'eye-off' : 'eye'} size={22} color="gray" />
-            </TouchableOpacity>
-          </View>
-          <Button title="Register" onPress={register} />
-          <View style={styles.space} />
-          <Button title="Login" onPress={login} />
-          <View style={styles.space} />
-          <Text style={styles.subtitle}>Reset Password</Text>
-          <View 
-          style={styles.passwordContainer}
-          >
+          )}
+
+          {(isLogin || isReset || !isLogin) && (
             <TextInput
-              placeholder="New Password"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry={!showResetPassword}
-              style={styles.passwordInput}
+              placeholder="Email"
+              value={isReset ? resetEmail : email}
+              onChangeText={(text) => (isReset ? setResetEmail(text) : setEmail(text))}
+              style={styles.input}
             />
-            <TouchableOpacity onPress={() => setShowResetPassword(!showResetPassword)}>
-              <Ionicons name={showResetPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
-            </TouchableOpacity>
-          </View>
-          <Button title="Reset Password" onPress={resetPassword} />
+          )}
+
+          {!isReset && (
+            <View style={styles.passwordContainer}>
+              <TextInput
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                style={styles.passwordInput}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {isReset && (
+            <>
+              <TextInput
+                placeholder="Name"
+                value={resetName}
+                onChangeText={setResetName}
+                style={styles.input}
+              />
+              <TextInput
+                placeholder="New Password"
+                value={newResetPassword}
+                onChangeText={setNewResetPassword}
+                style={styles.input}
+                secureTextEntry
+              />
+              <TextInput
+                placeholder="Confirm Password"
+                value={confirmResetPassword}
+                onChangeText={setConfirmResetPassword}
+                style={styles.input}
+                secureTextEntry
+              />
+            </>
+          )}
+
+          {isReset ? (
+            <>
+              <Button title="Reset Password" onPress={resetPassword} />
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsReset(false);
+                  setIsLogin(true);
+                }}
+              >
+                Back to Login
+              </Text>
+            </>
+          ) : isLogin ? (
+            <>
+              <Button title="Login" onPress={login} />
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsLogin(false);
+                  setIsReset(false);
+                }}
+              >
+                Don't have an account? Register
+              </Text>
+              <Text style={styles.linkText} onPress={() => setIsReset(true)}>
+                Forgot Password?
+              </Text>
+            </>
+          ) : (
+            <>
+              <Button title="Register" onPress={register} />
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsLogin(true);
+                  setIsReset(false);
+                }}
+              >
+                Already have an account? Login
+              </Text>
+            </>
+          )}
         </View>
       ) : (
         <View style={styles.card}>
           <Text style={styles.title}>Welcome!</Text>
-          <Button title="Mark Attendance" onPress={markAttendance} />
-          <View style={styles.space} />
           <Button title="Logout" onPress={logout} />
           <View style={styles.space} />
-          <Text style={styles.subtitle}>Today's Attendance</Text>
+          <Text style={styles.subtitle}>Attendance Records</Text>
+
           {attendance.length === 0 ? (
-            <Text>No attendance records for today.</Text>
+            <Text>No records found.</Text>
           ) : (
-            attendance.map((record) => (
-              <View key={record._id} style={styles.recordRow}>
-                <Text>
-                  {record.userId?.name || 'Unknown User'}
-                  {record.userId?.role ? (
-                    <Text style={styles.roleText}> ({record.userId.role})</Text>
-                  ) : null}
-                </Text>
+            Object.entries(
+              attendance.reduce((grouped, record) => {
+                const dateKey = record.signedInAt
+                  ? new Date(record.signedInAt).toLocaleDateString()
+                  : 'Unknown';
+                if (!grouped[dateKey]) grouped[dateKey] = [];
+                grouped[dateKey].push(record);
+                return grouped;
+              }, {} as Record<string, AttendanceRecord[]>)
+            ).map(([date, records]) => (
+              <View key={date} style={styles.tableContainer}>
+                <Text style={styles.tableTitle}>📅 {date}</Text>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerText]}>Name</Text>
+                  <Text style={[styles.tableCell, styles.headerText]}>Email</Text>
+                  <Text style={[styles.tableCell, styles.headerText]}>Role</Text>
+                  <Text style={[styles.tableCell, styles.headerText]}>Signed In</Text>
+                  <Text style={[styles.tableCell, styles.headerText]}>Signed Out</Text>
+                </View>
+                {records.map((record) => (
+                  <View key={record._id} style={styles.tableRow}>
+                    <Text style={styles.tableCell}>{record.userId?.name || '-'}</Text>
+                    <Text style={styles.tableCell}>{record.userId?.email || '-'}</Text>
+                    <Text style={styles.tableCell}>{record.userId?.role || 'User'}</Text>
+                    <Text style={styles.tableCell}>
+                      {record.signedInAt
+                        ? new Date(record.signedInAt).toLocaleTimeString()
+                        : 'Not Signed In'}
+                    </Text>
+                    <Text style={styles.tableCell}>
+                      {record.signedOutAt
+                        ? new Date(record.signedOutAt).toLocaleTimeString()
+                        : 'Not Signed Out'}
+                    </Text>
+                  </View>
+                ))}
               </View>
             ))
           )}
@@ -281,18 +349,27 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  input: { borderWidth: 1, width: '100%', padding: 10, marginBottom: 10 },
-  subtitle: { fontSize: 18, marginTop: 20 },
-  space: { height: 10 },
-  recordRow: {
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
   },
-  roleText: { fontSize: 12, color: '#555' },
-  timeText: { fontSize: 12, color: '#777' },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+  },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  subtitle: { fontSize: 18, marginTop: 20 },
+  input: {
+    borderWidth: 1,
+    width: '100%',
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  space: { height: 10 },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -300,6 +377,52 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingRight: 10,
     marginBottom: 10,
+    borderRadius: 5,
   },
-  passwordInput: { flex: 1, paddingVertical: 10 , paddingHorizontal: 10 , marginRight: 10},
+  passwordInput: { flex: 1, paddingVertical: 10, paddingHorizontal: 10, marginRight: 10 },
+  linkText: { color: 'blue', marginTop: 10, textAlign: 'center' },
+  recordRow: {
+    backgroundColor: '#f1f1f1',
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  recordText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  tableContainer: {
+    marginBottom: 30,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 10,
+    width: '100%',
+  },
+  tableTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    paddingBottom: 6,
+    marginBottom: 6,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  tableCell: {
+    flex: 1,
+    fontSize: 12,
+    color: '#444',
+  },
+  headerText: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+
 });
