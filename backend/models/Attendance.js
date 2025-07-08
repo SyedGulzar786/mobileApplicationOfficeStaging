@@ -25,11 +25,11 @@ const attendanceSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  signInAt: {
+  signedInAt: {       // ✅ rename
     type: Date,
     default: null,
   },
-  signOutAt: {
+  signedOutAt: {      // ✅ rename
     type: Date,
     default: null,
   }

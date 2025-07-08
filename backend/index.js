@@ -293,10 +293,10 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
   const existing = await Attendance.findOne({ userId, date: today });
 
   if (existing) {
-    if (existing.signInAt) {
+    if (existing.signedInAt) {
       return res.status(400).json({ message: 'Already signed in today' });
     } else {
-      existing.signInAt = new Date();
+      existing.signedInAt = new Date();
       await existing.save();
       return res.status(200).json({ message: 'Sign in time recorded' });
     }
@@ -305,7 +305,7 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
   await Attendance.create({
     userId,
     date: today,
-    signInAt: new Date()
+    signedInAt: new Date()
   });
 
   return res.status(201).json({ message: 'Signed in successfully' });
@@ -318,18 +318,19 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
 
   const existing = await Attendance.findOne({ userId, date: today });
 
-  if (!existing || !existing.signInAt) {
+  if (!existing || !existing.signedInAt) {
     return res.status(400).json({ message: 'You must sign in first before signing out' });
   }
 
-  if (existing.signOutAt) {
+  if (existing.signedOutAt) {
     return res.status(400).json({ message: 'Already signed out today' });
   }
 
-  existing.signOutAt = new Date();
+  existing.signedOutAt = new Date();
   await existing.save();
   return res.status(200).json({ message: 'Signed out successfully' });
 });
+
 
 app.get('/today', async (req, res) => {
   try {
