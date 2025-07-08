@@ -28,6 +28,7 @@ type AttendanceRecord = {
 };
 
 export default function AuthAttendanceScreen() {
+  const [role, setRole] = useState('');
   const [isReset, setIsReset] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -48,7 +49,7 @@ export default function AuthAttendanceScreen() {
       const res = await fetch(`${API}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -212,7 +213,20 @@ export default function AuthAttendanceScreen() {
           </Text>
 
           {!isLogin && !isReset && (
-            <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
+            <>
+              <TextInput
+                placeholder="Name"
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+              />
+              <TextInput
+                placeholder="Role (optional)"
+                value={role}
+                onChangeText={setRole}
+                style={styles.input}
+              />
+            </>
           )}
 
           <TextInput
@@ -239,23 +253,52 @@ export default function AuthAttendanceScreen() {
 
           {isReset && (
             <>
-              <TextInput placeholder="Name" value={resetName} onChangeText={setResetName} style={styles.input} />
-              <TextInput placeholder="New Password" value={newResetPassword} onChangeText={setNewResetPassword} style={styles.input} secureTextEntry />
-              <TextInput placeholder="Confirm Password" value={confirmResetPassword} onChangeText={setConfirmResetPassword} style={styles.input} secureTextEntry />
+              <TextInput
+                placeholder="Name"
+                value={resetName}
+                onChangeText={setResetName}
+                style={styles.input}
+              />
+              <TextInput
+                placeholder="New Password"
+                value={newResetPassword}
+                onChangeText={setNewResetPassword}
+                style={styles.input}
+                secureTextEntry
+              />
+              <TextInput
+                placeholder="Confirm Password"
+                value={confirmResetPassword}
+                onChangeText={setConfirmResetPassword}
+                style={styles.input}
+                secureTextEntry
+              />
             </>
           )}
 
           {isReset ? (
             <>
               <Button title="Reset Password" onPress={resetPassword} />
-              <Text style={styles.linkText} onPress={() => { setIsReset(false); setIsLogin(true); }}>
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsReset(false);
+                  setIsLogin(true);
+                }}
+              >
                 Back to Login
               </Text>
             </>
           ) : isLogin ? (
             <>
               <Button title="Login" onPress={login} />
-              <Text style={styles.linkText} onPress={() => { setIsLogin(false); setIsReset(false); }}>
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsLogin(false);
+                  setIsReset(false);
+                }}
+              >
                 Don't have an account? Register
               </Text>
               <Text style={styles.linkText} onPress={() => setIsReset(true)}>
@@ -265,7 +308,13 @@ export default function AuthAttendanceScreen() {
           ) : (
             <>
               <Button title="Register" onPress={register} />
-              <Text style={styles.linkText} onPress={() => { setIsLogin(true); setIsReset(false); }}>
+              <Text
+                style={styles.linkText}
+                onPress={() => {
+                  setIsLogin(true);
+                  setIsReset(false);
+                }}
+              >
                 Already have an account? Login
               </Text>
             </>
@@ -313,13 +362,15 @@ export default function AuthAttendanceScreen() {
                     <Text style={styles.tableCell}>
                       {record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : 'Not Signed In'}
                     </Text>
-                    <Text style={styles.tableCell}>
-                      {record.signedOutAt
-                        ? new Date(record.signedOutAt).toLocaleTimeString()
-                        : record.signedInAt
-                        ? 'Forgot to Sign Out'
-                        : 'Not Signed Out'}
-                    </Text>
+<Text style={styles.tableCell}>
+  {record.signedOutAt
+    ? new Date(record.signedOutAt).toLocaleTimeString()
+    : record.signedInAt
+    ? new Date(record.signedInAt).toDateString() === new Date().toDateString()
+      ? 'Not Signed Out'
+      : 'Forgot to Sign Out'
+    : '-'}
+</Text>
                   </View>
                 ))}
               </View>
@@ -328,6 +379,7 @@ export default function AuthAttendanceScreen() {
         </View>
       )}
     </ScrollView>
+
   );
 }
 
