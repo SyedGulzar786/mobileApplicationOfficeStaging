@@ -1,3 +1,4 @@
+// --- All imports remain unchanged ---
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,12 +9,11 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
-  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 
-const API = 'http://192.168.100.174:5000'; // Replace with your local IP
+const API = 'http://192.168.100.174:5000';
 
 type AttendanceRecord = {
   _id: string;
@@ -38,7 +38,6 @@ export default function AuthAttendanceScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Reset modal state
   const [resetName, setResetName] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [newResetPassword, setNewResetPassword] = useState('');
@@ -51,17 +50,14 @@ export default function AuthAttendanceScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-
       const data = await res.json();
       if (!res.ok) {
         Alert.alert('Error', data.message || 'Registration failed');
         return;
       }
-
       Alert.alert('Success', 'User registered. Now log in.');
       setIsLogin(true);
-    } catch (err) {
-      console.error('Register error:', err);
+    } catch {
       Alert.alert('Error', 'Registration failed');
     }
   };
@@ -79,7 +75,6 @@ export default function AuthAttendanceScreen() {
       try {
         data = JSON.parse(text);
       } catch {
-        console.error('Invalid JSON:', text);
         Alert.alert('Error', 'Unexpected server response');
         return;
       }
@@ -94,8 +89,7 @@ export default function AuthAttendanceScreen() {
       setIsLoggedIn(true);
       Alert.alert('Success', 'Logged in');
       fetchToday(data.token);
-    } catch (err) {
-      console.error('Login error:', err);
+    } catch {
       Alert.alert('Error', 'Login failed');
     }
   };
@@ -114,13 +108,8 @@ export default function AuthAttendanceScreen() {
     try {
       const res = await fetch(`${API}/today`);
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setAttendance(data);
-      } else {
-        setAttendance([]);
-      }
-    } catch (err) {
-      console.error('Fetch error:', err);
+      setAttendance(Array.isArray(data) ? data : []);
+    } catch {
       setAttendance([]);
     }
   };
@@ -130,7 +119,6 @@ export default function AuthAttendanceScreen() {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
-
     if (newResetPassword !== confirmResetPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
@@ -152,11 +140,10 @@ export default function AuthAttendanceScreen() {
       Alert.alert('Success', data.message || 'Password reset successful');
       setIsReset(false);
       setIsLogin(true);
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Something went wrong');
     }
   };
-
 
   useEffect(() => {
     const loadToken = async () => {
@@ -172,7 +159,7 @@ export default function AuthAttendanceScreen() {
 
   const handleSignIn = async () => {
     try {
-      const res = await fetch(`${API}/signin`, {
+      const res = await fetch(`${API}/attendance/signin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +168,6 @@ export default function AuthAttendanceScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         Alert.alert('Sign In Failed', data.message || 'Already signed in today');
         return;
@@ -189,15 +175,14 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed in');
       fetchToday(token!);
-    } catch (err) {
-      console.error('Sign In Error:', err);
+    } catch {
       Alert.alert('Error', 'Something went wrong');
     }
   };
 
   const handleSignOut = async () => {
     try {
-      const res = await fetch(`${API}/signout`, {
+      const res = await fetch(`${API}/attendance/signout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,7 +191,6 @@ export default function AuthAttendanceScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         Alert.alert('Sign Out Failed', data.message || 'Already signed out or not signed in yet');
         return;
@@ -214,12 +198,10 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed out');
       fetchToday(token!);
-    } catch (err) {
-      console.error('Sign Out Error:', err);
+    } catch {
       Alert.alert('Error', 'Something went wrong');
     }
   };
-
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -230,22 +212,15 @@ export default function AuthAttendanceScreen() {
           </Text>
 
           {!isLogin && !isReset && (
-            <TextInput
-              placeholder="Name"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-            />
+            <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
           )}
 
-          {(isLogin || isReset || !isLogin) && (
-            <TextInput
-              placeholder="Email"
-              value={isReset ? resetEmail : email}
-              onChangeText={(text) => (isReset ? setResetEmail(text) : setEmail(text))}
-              style={styles.input}
-            />
-          )}
+          <TextInput
+            placeholder="Email"
+            value={isReset ? resetEmail : email}
+            onChangeText={(text) => (isReset ? setResetEmail(text) : setEmail(text))}
+            style={styles.input}
+          />
 
           {!isReset && (
             <View style={styles.passwordContainer}>
@@ -264,52 +239,23 @@ export default function AuthAttendanceScreen() {
 
           {isReset && (
             <>
-              <TextInput
-                placeholder="Name"
-                value={resetName}
-                onChangeText={setResetName}
-                style={styles.input}
-              />
-              <TextInput
-                placeholder="New Password"
-                value={newResetPassword}
-                onChangeText={setNewResetPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-              <TextInput
-                placeholder="Confirm Password"
-                value={confirmResetPassword}
-                onChangeText={setConfirmResetPassword}
-                style={styles.input}
-                secureTextEntry
-              />
+              <TextInput placeholder="Name" value={resetName} onChangeText={setResetName} style={styles.input} />
+              <TextInput placeholder="New Password" value={newResetPassword} onChangeText={setNewResetPassword} style={styles.input} secureTextEntry />
+              <TextInput placeholder="Confirm Password" value={confirmResetPassword} onChangeText={setConfirmResetPassword} style={styles.input} secureTextEntry />
             </>
           )}
 
           {isReset ? (
             <>
               <Button title="Reset Password" onPress={resetPassword} />
-              <Text
-                style={styles.linkText}
-                onPress={() => {
-                  setIsReset(false);
-                  setIsLogin(true);
-                }}
-              >
+              <Text style={styles.linkText} onPress={() => { setIsReset(false); setIsLogin(true); }}>
                 Back to Login
               </Text>
             </>
           ) : isLogin ? (
             <>
               <Button title="Login" onPress={login} />
-              <Text
-                style={styles.linkText}
-                onPress={() => {
-                  setIsLogin(false);
-                  setIsReset(false);
-                }}
-              >
+              <Text style={styles.linkText} onPress={() => { setIsLogin(false); setIsReset(false); }}>
                 Don't have an account? Register
               </Text>
               <Text style={styles.linkText} onPress={() => setIsReset(true)}>
@@ -319,13 +265,7 @@ export default function AuthAttendanceScreen() {
           ) : (
             <>
               <Button title="Register" onPress={register} />
-              <Text
-                style={styles.linkText}
-                onPress={() => {
-                  setIsLogin(true);
-                  setIsReset(false);
-                }}
-              >
+              <Text style={styles.linkText} onPress={() => { setIsLogin(true); setIsReset(false); }}>
                 Already have an account? Login
               </Text>
             </>
@@ -335,14 +275,11 @@ export default function AuthAttendanceScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Welcome!</Text>
           <Button title="Logout" onPress={logout} />
-
           <View style={styles.space} />
-          {/* New Sign In & Sign Out Buttons */}
-          <Button title="Sign In" onPress={handleSignIn} color="#4CAF50" />
-          <View style={styles.space} />
-          <Button title="Sign Out" onPress={handleSignOut} color="#f44336" />
-          <View style={styles.space} />
-
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 10 }}>
+            <Button title="Sign In" onPress={handleSignIn} color="#4CAF50" />
+            <Button title="Sign Out" onPress={handleSignOut} color="#f44336" />
+          </View>
           <View style={styles.space} />
           <Text style={styles.subtitle}>Attendance Records</Text>
 
@@ -374,13 +311,13 @@ export default function AuthAttendanceScreen() {
                     <Text style={styles.tableCell}>{record.userId?.email || '-'}</Text>
                     <Text style={styles.tableCell}>{record.userId?.role || 'User'}</Text>
                     <Text style={styles.tableCell}>
-                      {record.signedInAt
-                        ? new Date(record.signedInAt).toLocaleTimeString()
-                        : 'Not Signed In'}
+                      {record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : 'Not Signed In'}
                     </Text>
                     <Text style={styles.tableCell}>
                       {record.signedOutAt
                         ? new Date(record.signedOutAt).toLocaleTimeString()
+                        : record.signedInAt
+                        ? 'Forgot to Sign Out'
                         : 'Not Signed Out'}
                     </Text>
                   </View>
@@ -391,7 +328,6 @@ export default function AuthAttendanceScreen() {
         </View>
       )}
     </ScrollView>
-
   );
 }
 
@@ -408,17 +344,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  modalCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   subtitle: { fontSize: 18, marginTop: 20 },
   input: {
@@ -428,7 +353,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
-  space: { height: 10 },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,16 +364,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: { flex: 1, paddingVertical: 10, paddingHorizontal: 10, marginRight: 10 },
   linkText: { color: 'blue', marginTop: 10, textAlign: 'center' },
-  recordRow: {
-    backgroundColor: '#f1f1f1',
-    padding: 10,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  recordText: {
-    fontSize: 14,
-    color: '#333',
-  },
+  space: { height: 10 },
   tableContainer: {
     marginBottom: 30,
     backgroundColor: '#f9f9f9',
@@ -483,6 +398,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
-  // space: { height: 10 },
-
 });
