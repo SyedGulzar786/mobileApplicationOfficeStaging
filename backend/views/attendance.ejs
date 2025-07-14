@@ -22,34 +22,38 @@
     </div>
   </form>
 
-<form method="POST" action="/admin/attendance/mark" class="row g-3 mb-4" id="admin-attendance-form">
-  <div class="col-md-5">
-    <select name="userId" class="form-select" required>
-      <option value="">Select User</option>
-      <% users.forEach(user => { %>
-        <option value="<%= user._id %>"><%= user.name %> - <%= user.email %></option>
-      <% }) %>
-    </select>
-  </div>
+  <form method="POST" action="/admin/attendance/mark" class="row g-3 mb-4" id="admin-attendance-form">
+    <div class="col-md-5">
+      <select name="userId" class="form-select" required>
+        <option value="">Select User</option>
+        <% users.forEach(user=> { %>
+          <option value="<%= user._id %>">
+            <%= user.name %> - <%= user.email %>
+          </option>
+          <% }) %>
+      </select>
+    </div>
 
-  <div class="col-md-3">
-    <input type="date" name="date" class="form-control" required />
-  </div>
+    <div class="col-md-3">
+      <input type="datetime-local" name="date" class="form-control" required />
+    </div>
 
-  <!-- Hidden input to set action -->
-  <input type="hidden" name="action" id="admin-action-field" />
 
-  <div class="col-md-4 d-flex gap-2">
-    <button type="submit" class="btn btn-primary w-50" onclick="setAction('signin')">Sign In</button>
-    <button type="submit" class="btn btn-danger w-50" onclick="setAction('signout')">Sign Out</button>
-  </div>
-</form>
 
-<script>
-  function setAction(action) {
-    document.getElementById('admin-action-field').value = action;
-  }
-</script>
+    <!-- Hidden input to set action -->
+    <input type="hidden" name="action" id="admin-action-field" />
+
+    <div class="col-md-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary w-50" onclick="setAction('signin')">Sign In</button>
+      <button type="submit" class="btn btn-danger w-50" onclick="setAction('signout')">Sign Out</button>
+    </div>
+  </form>
+
+  <script>
+    function setAction(action) {
+      document.getElementById('admin-action-field').value = action;
+    }
+  </script>
 
 
   <table class="table table-bordered">
@@ -82,11 +86,54 @@
             <%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %>
           </td>
 
-          <td>
+          <td class="d-flex gap-2">
+            <!-- Button trigger modal -->
+            <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editModal-<%= record._id %>">
+              Edit
+            </button>
+            <!-- Modal -->
+            <div class="modal fade" id="editModal-<%= record._id %>" tabindex="-1"
+              aria-labelledby="editModalLabel-<%= record._id %>" aria-hidden="true">
+              <div class="modal-dialog">
+                <form method="POST" action="/admin/attendance/<%= record._id %>/edit" class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel-<%= record._id %>">
+                      Edit Attendance – <%= record.userId?.name %>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="id" value="<%= record._id %>">
+
+                    <div class="mb-3">
+                      <label>Date</label>
+                      <input type="date" name="date" class="form-control"
+                        value="<%= record.date.toISOString().slice(0, 10) %>" required />
+                    </div>
+                    <div class="mb-3">
+                      <label>Signed In At</label>
+                      <input type="datetime-local" name="signedInAt" class="form-control"
+                        value="<%= record.signedInAt ? record.signedInAt.toISOString().slice(0,16) : '' %>" />
+                    </div>
+                    <div class="mb-3">
+                      <label>Signed Out At</label>
+                      <input type="datetime-local" name="signedOutAt" class="form-control"
+                        value="<%= record.signedOutAt ? record.signedOutAt.toISOString().slice(0,16) : '' %>" />
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
             <form method="POST" action="/admin/attendance/<%= record._id %>/delete">
               <button class="btn btn-danger btn-sm">Delete</button>
             </form>
           </td>
+
         </tr>
         <% }) %>
     </tbody>

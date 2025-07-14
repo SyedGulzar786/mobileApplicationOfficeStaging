@@ -163,6 +163,23 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/attendance');
 });
 
+app.post('/admin/attendance/:id/edit', requireAdminAuth, async (req, res) => {
+  const { date, signedInAt, signedOutAt } = req.body;
+
+  try {
+    await Attendance.findByIdAndUpdate(req.params.id, {
+      date: new Date(date),
+      signedInAt: signedInAt ? new Date(signedInAt) : null,
+      signedOutAt: signedOutAt ? new Date(signedOutAt) : null
+    });
+
+    res.redirect('/admin/attendance');
+  } catch (err) {
+    console.error('Edit error:', err);
+    res.redirect('/admin/attendance');
+  }
+});
+
 app.post('/admin/attendance/mark', requireAdminAuth, async (req, res) => {
   const { userId, date, action } = req.body;
 
