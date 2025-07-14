@@ -369,7 +369,7 @@ export default function AuthAttendanceScreen() {
     ? new Date(record.signedInAt).toDateString() === new Date().toDateString()
       ? 'Not Signed Out'
       : 'Forgot to Sign Out'
-    : '-'}
+    : 'absent'}
 </Text>
                   </View>
                 ))}

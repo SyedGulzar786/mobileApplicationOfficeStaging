@@ -222,7 +222,7 @@ function authMiddleware(req, res, next) {
 
 app.post('/register', async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ message: 'All fields required' });
     }
@@ -237,7 +237,8 @@ app.post('/register', async (req, res) => {
       name, 
       email, 
       password,             // plain text (for admin panel UI only)
-      passwordHashed: hashedPassword // ✅ actual login hash stored
+      passwordHashed: hashedPassword,
+      role: role || 'staff' // ✅ Default to 'staff' if not provided
     });
 
     res.status(201).json({ message: 'User registered', userId: user._id });
@@ -246,7 +247,6 @@ app.post('/register', async (req, res) => {
     res.status(500).json({ error: 'Registration failed' });
   }
 });
-
 
 app.post('/login', async (req, res) => {
   try {
@@ -330,7 +330,6 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
   await existing.save();
   return res.status(200).json({ message: 'Signed out successfully' });
 });
-
 
 app.get('/today', async (req, res) => {
   try {

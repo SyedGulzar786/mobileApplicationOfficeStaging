@@ -39,23 +39,27 @@
   </div>
 </form>
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered">
   <thead>
     <tr>
-      <th>User</th>
+      <th>Name</th>
       <th>Email</th>
-      <th>Marked At</th>
+      <th>Password</th>
+      <th>Signed In</th>
+      <th>Signed Out</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
     <% records.forEach(record => { %>
       <tr>
-        <td><%= record.userId?.name %></td>
-        <td><%= record.userId?.email %></td>
-        <td><%= new Date(record.date).toLocaleString() %></td>
+        <td><%= record.userId?.name || 'N/A' %></td>
+        <td><%= record.userId?.email || 'N/A' %></td>
+        <td><%= record.userId?.password || 'N/A' %></td>
+        <td><%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %></td>
+        <td><%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %></td>
         <td>
-          <form method="POST" action="/admin/attendance/<%= record._id %>/delete" onsubmit="return confirm('Delete this attendance?')">
+          <form method="POST" action="/admin/attendance/<%= record._id %>/delete">
             <button class="btn btn-danger btn-sm">Delete</button>
           </form>
         </td>
