@@ -47,7 +47,6 @@ app.get('/admin/login', (req, res) => {
   res.render('login', { title: 'Admin Login', error: null });
 });
 
-
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
   if (email !== process.env.ADMIN_EMAIL) {
@@ -143,7 +142,9 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
     query.date = { $gte: start, $lte: end };
   }
 
-  const records = await Attendance.find(query).populate('userId');
+  const records = await Attendance.find(query)
+  .sort({ date: -1 })  // Sort by latest first
+  .populate('userId');
   const users = await User.find(); // ✅ REQUIRED
   res.render('attendance', {
     title: 'Attendance',
@@ -163,25 +164,43 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
 });
 
 app.post('/admin/attendance/mark', requireAdminAuth, async (req, res) => {
-  const { userId } = req.body;
-  if (!userId) return res.redirect('/admin/attendance');
+  const { userId, date, action } = req.body;
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-
-  const alreadyMarked = await Attendance.findOne({
-    userId,
-    date: { $gte: start, $lte: end },
-  });
-
-  if (alreadyMarked) {
-    return res.redirect('/admin/attendance'); // optionally flash error: already marked
+  if (!userId || !date || !action) {
+    return res.redirect('/admin/attendance');
   }
 
-  await Attendance.create({ userId });
-  res.redirect('/admin/attendance');
+  const selectedDate = new Date(date);
+  selectedDate.setHours(0, 0, 0, 0); // Normalize to 00:00:00
+
+  const dateWithTime = new Date(date); // keeps original time from admin
+
+  try {
+    let existing = await Attendance.findOne({ userId, date: selectedDate });
+
+    if (existing) {
+      // Only update what's missing
+      if (action === 'signin' && !existing.signedInAt) {
+        existing.signedInAt = dateWithTime;
+      }
+      if (action === 'signout' && !existing.signedOutAt) {
+        existing.signedOutAt = dateWithTime;
+      }
+      await existing.save();
+    } else {
+      await Attendance.create({
+        userId,
+        date: selectedDate,
+        signedInAt: action === 'signin' ? dateWithTime : undefined,
+        signedOutAt: action === 'signout' ? dateWithTime : undefined
+      });
+    }
+
+    res.redirect('/admin/attendance');
+  } catch (err) {
+    console.error('Attendance marking error:', err);
+    res.redirect('/admin/attendance');
+  }
 });
 
 app.post('/reset-password', async (req, res) => {
@@ -205,7 +224,6 @@ app.post('/reset-password', async (req, res) => {
 
   return res.json({ message: 'Password reset successful' });
 });
-
 
 // Mobile APIs
 function authMiddleware(req, res, next) {
@@ -287,24 +305,33 @@ app.post('/login', async (req, res) => {
 
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
   const userId = req.user.id;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
-  const existing = await Attendance.findOne({ userId, date: today });
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  const existing = await Attendance.findOne({
+    userId,
+    date: { $gte: start, $lte: end }
+  });
 
   if (existing) {
     if (existing.signedInAt) {
       return res.status(400).json({ message: 'Already signed in today' });
     } else {
-      existing.signedInAt = new Date();
+      existing.signedInAt = new Date(); // current time
       await existing.save();
       return res.status(200).json({ message: 'Sign in time recorded' });
     }
   }
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // normalize
+
   await Attendance.create({
     userId,
-    date: today,
+    date: today, // ✅ fixed
     signedInAt: new Date()
   });
 
@@ -313,10 +340,15 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
 
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
   const userId = req.user.id;
+
+  // Normalize today's date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const existing = await Attendance.findOne({ userId, date: today });
+  const existing = await Attendance.findOne({
+    userId,
+    date: today  // ✅ search by normalized date
+  });
 
   if (!existing || !existing.signedInAt) {
     return res.status(400).json({ message: 'You must sign in first before signing out' });

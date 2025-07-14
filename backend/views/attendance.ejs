@@ -1,69 +1,93 @@
-<% title = 'Attendance Management' %>
+<% title='Attendance Management' %>
 
-<h2>Attendance Management</h2>
+  <h2>Attendance Management</h2>
 
-<form method="GET" class="row g-2 mb-4" action="/admin/attendance">
-  <div class="col-md-3">
-    <input type="text" name="name" value="<%= filters.name %>" class="form-control" placeholder="Filter by name" />
-  </div>
-  <div class="col-md-3">
-    <input type="date" name="date" value="<%= filters.date %>" class="form-control" />
-  </div>
-  <div class="col-md-2">
-    <select name="range" class="form-select">
-      <option value="">Select Range</option>
-      <option value="today" <%= filters.range === 'today' ? 'selected' : '' %>>Today</option>
-      <option value="week" <%= filters.range === 'week' ? 'selected' : '' %>>Last Week</option>
-      <option value="month" <%= filters.range === 'month' ? 'selected' : '' %>>Last Month</option>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <button class="btn btn-primary">Apply Filters</button>
-  </div>
-  <div class="col-md-2">
-    <a href="/admin/attendance" class="btn btn-secondary">Reset</a>
-  </div>
-</form>
+  <form method="GET" class="row g-2 mb-4" action="/admin/attendance">
+    <div class="col-md-3">
+      <input type="text" name="name" value="<%= filters.name %>" class="form-control" placeholder="Filter by name" />
+    </div>
+    <div class="col-md-2">
+      <select name="range" class="form-select">
+        <option value="">Select Range</option>
+        <option value="today" <%=filters.range==='today' ? 'selected' : '' %>>Today</option>
+        <option value="week" <%=filters.range==='week' ? 'selected' : '' %>>Last Week</option>
+        <option value="month" <%=filters.range==='month' ? 'selected' : '' %>>Last Month</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary">Apply Filters</button>
+    </div>
+    <div class="col-md-2">
+      <a href="/admin/attendance" class="btn btn-secondary">Reset</a>
+    </div>
+  </form>
 
-<form method="POST" action="/admin/attendance/mark" class="row g-3 mb-4">
-  <div class="col-md-6">
+<form method="POST" action="/admin/attendance/mark" class="row g-3 mb-4" id="admin-attendance-form">
+  <div class="col-md-5">
     <select name="userId" class="form-select" required>
-      <option value="">Select User to Mark Attendance</option>
+      <option value="">Select User</option>
       <% users.forEach(user => { %>
         <option value="<%= user._id %>"><%= user.name %> - <%= user.email %></option>
       <% }) %>
     </select>
   </div>
-  <div class="col-md-2">
-    <button class="btn btn-success">Mark Attendance</button>
+
+  <div class="col-md-3">
+    <input type="date" name="date" class="form-control" required />
+  </div>
+
+  <!-- Hidden input to set action -->
+  <input type="hidden" name="action" id="admin-action-field" />
+
+  <div class="col-md-4 d-flex gap-2">
+    <button type="submit" class="btn btn-primary w-50" onclick="setAction('signin')">Sign In</button>
+    <button type="submit" class="btn btn-danger w-50" onclick="setAction('signout')">Sign Out</button>
   </div>
 </form>
 
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Password</th>
-      <th>Signed In</th>
-      <th>Signed Out</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% records.forEach(record => { %>
+<script>
+  function setAction(action) {
+    document.getElementById('admin-action-field').value = action;
+  }
+</script>
+
+
+  <table class="table table-bordered">
+    <thead>
       <tr>
-        <td><%= record.userId?.name || 'N/A' %></td>
-        <td><%= record.userId?.email || 'N/A' %></td>
-        <td><%= record.userId?.password || 'N/A' %></td>
-        <td><%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %></td>
-        <td><%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %></td>
-        <td>
-          <form method="POST" action="/admin/attendance/<%= record._id %>/delete">
-            <button class="btn btn-danger btn-sm">Delete</button>
-          </form>
-        </td>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Password</th>
+        <th>Signed In</th>
+        <th>Signed Out</th>
+        <th>Actions</th>
       </tr>
-    <% }) %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% records.forEach(record=> { %>
+        <tr>
+          <td>
+            <%= record.userId?.name || 'N/A' %>
+          </td>
+          <td>
+            <%= record.userId?.email || 'N/A' %>
+          </td>
+          <td>
+            <%= record.userId?.password || 'N/A' %>
+          </td>
+          <td>
+            <%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %>
+          </td>
+          <td>
+            <%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %>
+          </td>
+
+          <td>
+            <form method="POST" action="/admin/attendance/<%= record._id %>/delete">
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+    </tbody>
+  </table>
