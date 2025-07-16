@@ -10,9 +10,24 @@
       <div class="col">
         <input type="email" name="email" class="form-control" placeholder="Email" required />
       </div>
-      <div class="col">
+      <!-- <div class="col">
         <input type="password" name="password" class="form-control" placeholder="Password" required />
-      </div>
+      </div> -->
+      <div class=" col">
+  <!-- <label>Password</label> -->
+  <div class="input-group">
+    <input type="password" name="password" placeholder="Password" id="passwordField" class="form-control" required />
+    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility()">👁️</button>
+  </div>
+</div>
+
+<script>
+  function togglePasswordVisibility() {
+    const passwordField = document.getElementById('passwordField');
+    passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+  }
+</script>
+
       <div class="col">
         <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
       </div>

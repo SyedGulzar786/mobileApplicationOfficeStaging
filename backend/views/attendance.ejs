@@ -61,7 +61,8 @@
       <tr>
         <th>Name</th>
         <th>Email</th>
-        <th>Password</th>
+        <!-- <th>Password</th> -->
+        <th>Date</th>
         <th>Signed In</th>
         <th>Signed Out</th>
         <th>Actions</th>
@@ -76,8 +77,11 @@
           <td>
             <%= record.userId?.email || 'N/A' %>
           </td>
-          <td>
+          <!-- <td>
             <%= record.userId?.password || 'N/A' %>
+          </td> -->
+          <td>
+          <%= record.date.toDateString() %>  <!-- if you show record.date -->
           </td>
           <td>
             <%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %>
