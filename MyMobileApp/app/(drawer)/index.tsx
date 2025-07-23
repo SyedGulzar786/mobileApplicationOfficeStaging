@@ -3,8 +3,6 @@ import { useRouter } from 'expo-router';
 import {
   View,
   Text,
-  TextInput,
-  Button,
   ScrollView,
   StyleSheet,
   Alert,
@@ -32,49 +30,10 @@ export default function AuthAttendanceScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isReset, setIsReset] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('')
   const [token, setToken] = useState<string | null>(null);
-  const [userName, setUserName] = useState('');
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-
-  const [resetName, setResetName] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
-  const [newResetPassword, setNewResetPassword] = useState('');
-  const [confirmResetPassword, setConfirmResetPassword] = useState('');
-
-  const login = async () => {
-    try {
-      const res = await fetch(`${API}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        Alert.alert('Error', 'Unexpected server response');
-        return;
-      }
-
-      if (!res.ok) {
-        Alert.alert('Login Failed', data.message || 'Check credentials');
-        return;
-      }
-
-      await AsyncStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUserName(data.user.name);
-      setIsLoggedIn(true);
-      fetchToday(data.token);
-    } catch {
-      Alert.alert('Error', 'Login failed');
-    }
-  };
 
   const logout = async () => {
     await AsyncStorage.removeItem('token');
@@ -84,6 +43,7 @@ export default function AuthAttendanceScreen() {
     setPassword('');
     setAttendance([]);
     Alert.alert('Logged out');
+    router.push('/');
   };
 
   const fetchToday = async (tokenOverride?: string) => {
@@ -95,38 +55,6 @@ export default function AuthAttendanceScreen() {
       setAttendance(Array.isArray(data) ? data : []);
     } catch {
       setAttendance([]);
-    }
-  };
-
-  const resetPassword = async () => {
-    if (!resetEmail || !newResetPassword || !resetName) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
-    if (newResetPassword !== confirmResetPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API}/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: resetName, email: resetEmail, newPassword: newResetPassword }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        Alert.alert('Error', data.message || 'Reset failed');
-        return;
-      }
-
-      Alert.alert('Success', data.message || 'Password reset successful');
-      setIsReset(false);
-      setEmail('');
-      setPassword('');
-    } catch {
-      Alert.alert('Error', 'Something went wrong');
     }
   };
 
@@ -190,72 +118,6 @@ export default function AuthAttendanceScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {!isLoggedIn ? (
-        <View style={styles.card}>
-          <Text style={styles.title}>{isReset ? 'Reset Password' : 'Login'}</Text>
-
-          <TextInput
-            placeholder="Email"
-            value={isReset ? resetEmail : email}
-            onChangeText={text => (isReset ? setResetEmail(text) : setEmail(text))}
-            style={styles.input}
-          />
-
-          {!isReset ? (
-            <View style={styles.passwordContainer}>
-              <TextInput
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                style={styles.passwordInput}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="gray" />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              <TextInput
-                placeholder="Name"
-                value={resetName}
-                onChangeText={setResetName}
-                style={styles.input}
-              />
-              <TextInput
-                placeholder="New Password"
-                value={newResetPassword}
-                onChangeText={setNewResetPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-              <TextInput
-                placeholder="Confirm Password"
-                value={confirmResetPassword}
-                onChangeText={setConfirmResetPassword}
-                style={styles.input}
-                secureTextEntry
-              />
-            </>
-          )}
-
-          {isReset ? (
-            <>
-              <Button title="Reset Password" onPress={resetPassword} />
-              <Text style={styles.linkText} onPress={() => setIsReset(false)}>
-                Back to Login
-              </Text>
-            </>
-          ) : (
-            <>
-              <Button title="Login" onPress={login} />
-              <Text style={styles.linkText} onPress={() => setIsReset(true)}>
-                Forgot Password?
-              </Text>
-            </>
-          )}
-        </View>
-      ) : (
         <View style={styles.card}>
           <View style={styles.logoutRow}>
             <Text style={styles.title}>Welcome! {userName}</Text>
@@ -327,7 +189,6 @@ export default function AuthAttendanceScreen() {
             </View>
           )}
         </View>
-      )}
     </ScrollView>
   );
 }
@@ -347,29 +208,6 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
   subtitle: { fontSize: 18, marginTop: 20, fontWeight: '600' },
-  input: {
-    borderWidth: 1,
-    width: '100%',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    width: '100%',
-    paddingRight: 10,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    marginRight: 10,
-  },
-  linkText: { color: 'blue', marginTop: 10, textAlign: 'center' },
   space: { height: 10 },
   tableContainer: {
     marginTop: 15,
