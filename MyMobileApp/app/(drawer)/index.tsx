@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   View,
@@ -7,13 +7,13 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const API = 'http://192.168.100.174:5000';
-// const API = 'http://192.168.1.107:5000';
-
 
 type AttendanceRecord = {
   _id: string;
@@ -28,33 +28,42 @@ type AttendanceRecord = {
 
 export default function AuthAttendanceScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('')
-  const [token, setToken] = useState<string | null>(null);
+  const { token, logout, isAuthReady } = useAuth();
+  const [userName, setUserName] = useState('');
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const logout = async () => {
-    await AsyncStorage.removeItem('token');
-    setToken(null);
-    setIsLoggedIn(false);
-    setEmail('');
-    setPassword('');
-    setAttendance([]);
-    Alert.alert('Logged out');
-    router.push('/');
+  const extractNameFromToken = (jwt: string) => {
+    try {
+      const payload = jwt.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded.name || decoded.email || '';
+    } catch {
+      return '';
+    }
   };
 
   const fetchToday = async (tokenOverride?: string) => {
     try {
-      const res = await fetch(`${API}/today`);
+      const activeToken = tokenOverride || token;
+      if (!activeToken) return;
+
+      const res = await fetch(`${API}/today`, {
+        headers: {
+          Authorization: `Bearer ${activeToken}`,
+        },
+      });
+
       const data = await res.json();
-      const stored = tokenOverride || token;
-      if (stored) setToken(stored);
       setAttendance(Array.isArray(data) ? data : []);
-    } catch {
+
+      const extractedName = extractNameFromToken(activeToken);
+      if (extractedName) setUserName(extractedName);
+    } catch (error) {
+      console.error('Failed to fetch attendance:', error);
       setAttendance([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -75,7 +84,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed in');
-      fetchToday(token!);
+      fetchToday(); // Refresh after sign-in
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -98,103 +107,113 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed out');
-      fetchToday(token!);
+      fetchToday(); // Refresh after sign-out
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
   };
 
   useEffect(() => {
-    const loadToken = async () => {
-      const stored = await AsyncStorage.getItem('token');
-      if (stored) {
-        setToken(stored);
-        setIsLoggedIn(true);
-        fetchToday(stored);
+    if (isAuthReady && token) {
+      fetchToday(token);
+    }
+  }, [isAuthReady, token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        fetchToday(token);
       }
-    };
-    loadToken();
-  }, []);
+    }, [token])
+  );
+
+  if (!isAuthReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <View style={styles.logoutRow}>
-            <Text style={styles.title}>Welcome! {userName}</Text>
-            <TouchableOpacity onPress={logout}>
-              <Ionicons name="log-out-outline" size={28} color="gray" />
+      <View style={styles.card}>
+        <View style={styles.logoutRow}>
+          <Text style={styles.title}>Welcome! {userName}</Text>
+          <TouchableOpacity onPress={logout}>
+            <Ionicons name="log-out-outline" size={28} color="gray" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.buttonRow}>
+          <View style={styles.leftButtons}>
+            <TouchableOpacity
+              style={[styles.button, styles.signIn]}
+              onPress={handleSignIn}
+            >
+              <Text style={styles.buttonText}>Sign In</Text>
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.space} />
-          {/* <Button title="Sign In" onPress={handleSignIn} color="#4CAF50" />
-          <View style={styles.space} />
-          <Button title="Sign Out" onPress={handleSignOut} color="#f44336" />
-          <Button
-            title="Show Records"
-            onPress={() => router.push('/(tabs)/records')}
-            color="#2196F3"
-          /> */}
-          <View style={styles.buttonRow}>
-            <View style={styles.leftButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.signIn]}
-                onPress={handleSignIn}
-              >
-                <Text style={styles.buttonText}>Sign In</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.button, styles.signOut]}
-                onPress={handleSignOut}
-              >
-                <Text style={styles.buttonText}>Sign Out</Text>
-              </TouchableOpacity>
-            </View>
 
             <TouchableOpacity
-              style={[styles.button, styles.rightButton]}
-              onPress={() => router.push('/(drawer)/records')}
+              style={[styles.button, styles.signOut]}
+              onPress={handleSignOut}
             >
-              <Text style={styles.buttonText}>Show Records</Text>
+              <Text style={styles.buttonText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
 
-
-          <View style={styles.space} />
-
-          <Text style={styles.subtitle}>Today's Attendance</Text>
-          {attendance.length === 0 ? (
-            <Text>No records found.</Text>
-          ) : (
-            <View style={styles.tableContainer}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCell, styles.headerText]}>Date</Text>
-                <Text style={[styles.tableCell, styles.headerText]}>Signed In</Text>
-                <Text style={[styles.tableCell, styles.headerText]}>Signed Out</Text>
-              </View>
-              {attendance.map((record) => {
-                const date = new Date(record.signedInAt || record.signedOutAt || '').toLocaleDateString();
-                const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
-                const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
-
-                return (
-                  <View key={record._id} style={styles.tableRow}>
-                    <Text style={styles.tableCell}>{date}</Text>
-                    <Text style={styles.tableCell}>{signedIn}</Text>
-                    <Text style={styles.tableCell}>{signedOut}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
+          <TouchableOpacity
+            style={[styles.button, styles.rightButton]}
+            onPress={() => router.push('/(drawer)/records')}
+          >
+            <Text style={styles.buttonText}>Show Records</Text>
+          </TouchableOpacity>
         </View>
+
+        <View style={styles.space} />
+        <Text style={styles.subtitle}>Today's Attendance</Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#888" />
+        ) : attendance.length === 0 ? (
+          <Text>No records found.</Text>
+        ) : (
+          <View style={styles.tableContainer}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableCell, styles.headerText]}>Date</Text>
+              <Text style={[styles.tableCell, styles.headerText]}>Signed In</Text>
+              <Text style={[styles.tableCell, styles.headerText]}>Signed Out</Text>
+            </View>
+            {attendance.map((record) => {
+              const date = new Date(record.signedInAt || record.signedOutAt || '').toLocaleDateString();
+              const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
+              const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
+
+              return (
+                <View key={record._id} style={styles.tableRow}>
+                  <Text style={styles.tableCell}>{date}</Text>
+                  <Text style={styles.tableCell}>{signedIn}</Text>
+                  <Text style={styles.tableCell}>{signedOut}</Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flexGrow: 1, alignItems: 'center' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  container: {
+    padding: 20,
+    flexGrow: 1,
+    alignItems: 'center',
+  },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -206,9 +225,19 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
-  subtitle: { fontSize: 18, marginTop: 20, fontWeight: '600' },
-  space: { height: 10 },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    marginTop: 20,
+    fontWeight: '600',
+  },
+  space: {
+    height: 10,
+  },
   tableContainer: {
     marginTop: 15,
     backgroundColor: '#f9f9f9',
@@ -241,8 +270,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-
-  // ✅ Final correct styles for button layout:
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -273,4 +300,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
