@@ -143,7 +143,6 @@ export default function AuthAttendanceScreen() {
           <View>
             <Text>Welcome! {userName}</Text>
           </View>
-
         </Text>
 
         <View style={styles.buttonRow}>
@@ -151,14 +150,14 @@ export default function AuthAttendanceScreen() {
             style={[styles.button, styles.signIn]}
             onPress={handleSignIn}
           >
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={styles.buttonText}>SIGN IN</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, styles.signOut]}
             onPress={handleSignOut}
           >
-            <Text style={styles.buttonText}>Sign Out</Text>
+            <Text style={styles.buttonText}>SIGN OUT</Text>
           </TouchableOpacity>
         </View>
 
@@ -222,6 +221,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
@@ -260,28 +260,34 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginTop: 15,
+    justifyContent: 'space-evenly',
+    marginTop: 20,
+    marginBottom: 20,
   },
   signIn: {
     backgroundColor: '#4CAF50',
+    paddingVertical: 18,
+    paddingHorizontal: 30,
+    borderRadius: 10,
     flex: 1,
+    marginRight: 10,
     alignItems: 'center',
   },
   signOut: {
     backgroundColor: '#f44336',
+    paddingVertical: 18,
+    paddingHorizontal: 30,
+    borderRadius: 10,
     flex: 1,
+    marginLeft: 10,
     alignItems: 'center',
   },
   button: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
+    elevation: 3,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 18,
   },
 });
