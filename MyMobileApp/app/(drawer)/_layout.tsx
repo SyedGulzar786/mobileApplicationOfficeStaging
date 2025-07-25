@@ -82,10 +82,8 @@
 
 
 
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Drawer } from 'expo-router/drawer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -97,12 +95,17 @@ import {
   StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext'; // ✅ Update path if needed
 
 const API = 'http://192.168.100.174:5000';
 
 export default function DrawerLayout() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const {
+    isLoggedIn,
+    isAuthReady,
+    login: authLogin,
+  } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -111,15 +114,6 @@ export default function DrawerLayout() {
   const [resetEmail, setResetEmail] = useState('');
   const [newResetPassword, setNewResetPassword] = useState('');
   const [confirmResetPassword, setConfirmResetPassword] = useState('');
-
-  useEffect(() => {
-    const checkLogin = async () => {
-      const token = await AsyncStorage.getItem('token');
-      setIsLoggedIn(!!token);
-      setLoading(false);
-    };
-    checkLogin();
-  }, []);
 
   const login = async () => {
     try {
@@ -143,8 +137,7 @@ export default function DrawerLayout() {
         return;
       }
 
-      await AsyncStorage.setItem('token', data.token);
-      setIsLoggedIn(true);
+      await authLogin(data.token); // ✅ Call context login
     } catch {
       Alert.alert('Error', 'Login failed');
     }
@@ -164,7 +157,11 @@ export default function DrawerLayout() {
       const res = await fetch(`${API}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: resetName, email: resetEmail, newPassword: newResetPassword }),
+        body: JSON.stringify({
+          name: resetName,
+          email: resetEmail,
+          newPassword: newResetPassword,
+        }),
       });
 
       const data = await res.json();
@@ -182,7 +179,7 @@ export default function DrawerLayout() {
     }
   };
 
-  if (loading) return null;
+  if (!isAuthReady) return null; // ✅ Wait for auth to load
 
   if (!isLoggedIn) {
     return (
@@ -238,12 +235,16 @@ export default function DrawerLayout() {
           {isReset ? (
             <>
               <Button title="Reset Password" onPress={resetPassword} />
-              <Text style={styles.linkText} onPress={() => setIsReset(false)}>Back to Login</Text>
+              <Text style={styles.linkText} onPress={() => setIsReset(false)}>
+                Back to Login
+              </Text>
             </>
           ) : (
             <>
               <Button title="Login" onPress={login} />
-              <Text style={styles.linkText} onPress={() => setIsReset(true)}>Forgot Password?</Text>
+              <Text style={styles.linkText} onPress={() => setIsReset(true)}>
+                Forgot Password?
+              </Text>
             </>
           )}
         </View>

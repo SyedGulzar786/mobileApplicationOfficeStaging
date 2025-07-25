@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -9,11 +8,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 
-const API = 'http://192.168.100.174:5000';
+const API = 'http://192.168.100.174:5000'; // ✅ Replace with your server if needed
 
 type AttendanceRecord = {
   _id: string;
@@ -27,13 +25,13 @@ type AttendanceRecord = {
 };
 
 export default function AuthAttendanceScreen() {
-  const router = useRouter();
-  const { token, logout, isAuthReady } = useAuth();
+  const { token, isAuthReady, isLoggedIn } = useAuth();
   const [userName, setUserName] = useState('');
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
 
-  const extractNameFromToken = (jwt: string) => {
+  const extractNameFromToken = (jwt: string): string => {
     try {
       const payload = jwt.split('.')[1];
       const decoded = JSON.parse(atob(payload));
@@ -47,6 +45,8 @@ export default function AuthAttendanceScreen() {
     try {
       const activeToken = tokenOverride || token;
       if (!activeToken) return;
+
+      setLoading(true);
 
       const res = await fetch(`${API}/today`, {
         headers: {
@@ -84,7 +84,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed in');
-      fetchToday(); // Refresh after sign-in
+      fetchToday();
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -107,17 +107,18 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed out');
-      fetchToday(); // Refresh after sign-out
+      fetchToday();
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
   };
 
   useEffect(() => {
-    if (isAuthReady && token) {
+    if (isAuthReady && isLoggedIn && token && !hasFetchedInitially) {
       fetchToday(token);
+      setHasFetchedInitially(true);
     }
-  }, [isAuthReady, token]);
+  }, [isAuthReady, isLoggedIn, token, hasFetchedInitially]);
 
   useFocusEffect(
     useCallback(() => {
@@ -138,40 +139,32 @@ export default function AuthAttendanceScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <View style={styles.logoutRow}>
-          <Text style={styles.title}>Welcome! {userName}</Text>
-          <TouchableOpacity onPress={logout}>
-            <Ionicons name="log-out-outline" size={28} color="gray" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.buttonRow}>
-          <View style={styles.leftButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.signIn]}
-              onPress={handleSignIn}
-            >
-              <Text style={styles.buttonText}>Sign In</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, styles.signOut]}
-              onPress={handleSignOut}
-            >
-              <Text style={styles.buttonText}>Sign Out</Text>
-            </TouchableOpacity>
+        <Text style={styles.title}>
+          <View>
+            <Text>Welcome! {userName}</Text>
           </View>
 
+        </Text>
+
+        <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={[styles.button, styles.rightButton]}
-            onPress={() => router.push('/(drawer)/records')}
+            style={[styles.button, styles.signIn]}
+            onPress={handleSignIn}
           >
-            <Text style={styles.buttonText}>Show Records</Text>
+            <Text style={styles.buttonText}>Sign In</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.signOut]}
+            onPress={handleSignOut}
+          >
+            <Text style={styles.buttonText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.space} />
         <Text style={styles.subtitle}>Today's Attendance</Text>
+
         {loading ? (
           <ActivityIndicator size="small" color="#888" />
         ) : attendance.length === 0 ? (
@@ -265,29 +258,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
   },
-  logoutRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  leftButtons: {
-    flexDirection: 'row',
     gap: 10,
-  },
-  rightButton: {
-    backgroundColor: '#2196F3',
+    marginTop: 15,
   },
   signIn: {
     backgroundColor: '#4CAF50',
+    flex: 1,
+    alignItems: 'center',
   },
   signOut: {
     backgroundColor: '#f44336',
+    flex: 1,
+    alignItems: 'center',
   },
   button: {
     paddingVertical: 10,
