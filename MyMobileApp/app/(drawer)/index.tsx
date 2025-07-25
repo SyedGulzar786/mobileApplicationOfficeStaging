@@ -136,12 +136,28 @@ export default function AuthAttendanceScreen() {
     );
   }
 
+  const getMotivationalText = () => {
+    const day = new Date().toLocaleString('en-us', { weekday: 'long' }).toLowerCase();
+    const messages: Record<string, string> = {
+      monday: 'Monday – the starting of the day with lots of love!',
+      tuesday: 'Tuesday – keep moving forward with strength!',
+      wednesday: 'Wednesday – halfway to your goals!',
+      thursday: 'Thursday – push harder, you’re almost there!',
+      friday: 'Friday – wrap up strong!',
+      saturday: 'Saturday – relax and recharge!',
+      sunday: 'Sunday – a fresh breath before the week begins!',
+    };
+    return messages[day] || 'Have a great day!';
+  };
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>
           <View>
-            <Text>Welcome! {userName}</Text>
+            <Text style={styles.welcome}>Welcome {userName}!</Text>
+            <Text style={styles.motivation}>{getMotivationalText()}</Text>
           </View>
         </Text>
 
@@ -289,5 +305,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
+  },
+  welcome:{
+    fontSize: 26,
+  },
+  motivation: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 15,
   },
 });
