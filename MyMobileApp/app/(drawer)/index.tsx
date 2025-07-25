@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
+import { format } from 'date-fns';
 
 const API = 'http://192.168.100.174:5000'; // ✅ Replace with your server if needed
 
@@ -41,21 +42,31 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-  const fetchToday = async (tokenOverride?: string) => {
+  const fetchLast7Days = async (tokenOverride?: string) => {
     try {
       const activeToken = tokenOverride || token;
       if (!activeToken) return;
 
       setLoading(true);
 
-      const res = await fetch(`${API}/today`, {
+      const res = await fetch(`${API}/attendance/week`, {
         headers: {
           Authorization: `Bearer ${activeToken}`,
         },
       });
 
       const data = await res.json();
-      setAttendance(Array.isArray(data) ? data : []);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+      const filtered = (Array.isArray(data) ? data : []).filter((record) => {
+        const date = new Date(record.signedInAt || record.signedOutAt || '');
+        return date >= sevenDaysAgo;
+      });
+
+      filtered.sort((a, b) => new Date(b.signedInAt || b.signedOutAt || '').getTime() - new Date(a.signedInAt || a.signedOutAt || '').getTime());
+
+      setAttendance(filtered);
 
       const extractedName = extractNameFromToken(activeToken);
       if (extractedName) setUserName(extractedName);
@@ -84,7 +95,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed in');
-      fetchToday();
+      fetchLast7Days();
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -107,7 +118,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed out');
-      fetchToday();
+      fetchLast7Days();
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -115,7 +126,7 @@ export default function AuthAttendanceScreen() {
 
   useEffect(() => {
     if (isAuthReady && isLoggedIn && token && !hasFetchedInitially) {
-      fetchToday(token);
+      fetchLast7Days(token);
       setHasFetchedInitially(true);
     }
   }, [isAuthReady, isLoggedIn, token, hasFetchedInitially]);
@@ -123,18 +134,10 @@ export default function AuthAttendanceScreen() {
   useFocusEffect(
     useCallback(() => {
       if (token) {
-        fetchToday(token);
+        fetchLast7Days(token);
       }
     }, [token])
   );
-
-  if (!isAuthReady) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
 
   const getMotivationalText = () => {
     const day = new Date().toLocaleString('en-us', { weekday: 'long' }).toLowerCase();
@@ -150,15 +153,18 @@ export default function AuthAttendanceScreen() {
     return messages[day] || 'Have a great day!';
   };
 
+const formatDateTitle = () => {
+  const now = new Date();
+  return format(now, "EEE - dd-MMM, yyyy");
+};
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>
-          <View>
-            <Text style={styles.welcome}>Welcome {userName}!</Text>
-            <Text style={styles.motivation}>{getMotivationalText()}</Text>
-          </View>
+          <Text style={styles.welcome}>Welcome {userName}!</Text>
+          <Text style={styles.motivation}>{getMotivationalText()}</Text>
         </Text>
 
         <View style={styles.buttonRow}>
@@ -177,8 +183,9 @@ export default function AuthAttendanceScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.space} />
-        <Text style={styles.subtitle}>Today's Attendance</Text>
+        <Text style={styles.dateHeading}>{formatDateTitle()}</Text>
+
+        <Text style={styles.subtitle}>Last Week's Attendance</Text>
 
         {loading ? (
           <ActivityIndicator size="small" color="#888" />
@@ -186,21 +193,24 @@ export default function AuthAttendanceScreen() {
           <Text>No records found.</Text>
         ) : (
           <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.headerText]}>Date</Text>
-              <Text style={[styles.tableCell, styles.headerText]}>Signed In</Text>
-              <Text style={[styles.tableCell, styles.headerText]}>Signed Out</Text>
-            </View>
             {attendance.map((record) => {
-              const date = new Date(record.signedInAt || record.signedOutAt || '').toLocaleDateString();
+              const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
               const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
               const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
 
               return (
-                <View key={record._id} style={styles.tableRow}>
-                  <Text style={styles.tableCell}>{date}</Text>
-                  <Text style={styles.tableCell}>{signedIn}</Text>
-                  <Text style={styles.tableCell}>{signedOut}</Text>
+                <View key={record._id} style={styles.recordBlock}>
+                  <Text style={styles.recordDate}>{date}</Text>
+                  <View style={styles.recordRow}>
+                    <View style={styles.recordColumn}>
+                      <Text style={styles.columnTitle}>Signed In</Text>
+                      <Text style={styles.columnValue}>{signedIn}</Text>
+                    </View>
+                    <View style={styles.recordColumn}>
+                      <Text style={styles.columnTitle}>Signed Out</Text>
+                      <Text style={styles.columnValue}>{signedOut}</Text>
+                    </View>
+                  </View>
                 </View>
               );
             })}
@@ -240,12 +250,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 20,
     marginTop: 20,
-    fontWeight: '600',
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#2c3e50',
   },
-  space: {
-    height: 10,
+  dateHeading: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 10,
+    color: '#2980b9',
   },
   tableContainer: {
     marginTop: 15,
@@ -254,25 +270,38 @@ const styles = StyleSheet.create({
     padding: 10,
     width: '100%',
   },
-  tableHeader: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 6,
-    marginBottom: 6,
+  recordBlock: {
+    marginBottom: 15,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    elevation: 2,
   },
-  tableRow: {
-    flexDirection: 'row',
-    marginBottom: 6,
+  recordDate: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#34495e',
+    textAlign: 'center',
   },
-  tableCell: {
+  recordRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  recordColumn: {
+    alignItems: 'center',
     flex: 1,
-    fontSize: 12,
-    color: '#444',
   },
-  headerText: {
+  columnTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#555',
+  },
+  columnValue: {
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#000',
+    color: '#2ecc71',
+    marginTop: 5,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -306,7 +335,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  welcome:{
+  welcome: {
     fontSize: 26,
   },
   motivation: {

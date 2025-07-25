@@ -8,6 +8,9 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
 
+const { startOfWeek } = require("date-fns");
+;
+
 const User = require('./models/User');
 const Attendance = require('./models/Attendance');
 
@@ -174,7 +177,7 @@ app.post('/admin/attendance/:id/edit', requireAdminAuth, async (req, res) => {
     });
 
     res.redirect('/admin/attendance');
-  } catch (err) {
+  } catch (err) { 
     console.error('Edit error:', err);
     res.redirect('/admin/attendance');
   }
@@ -407,6 +410,21 @@ app.get('/users', async (req, res) => {
 app.get('/attendance', async (req, res) => {
   try {
     const records = await Attendance.find().populate('userId');
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch attendance' });
+  }
+});
+
+app.get('/attendance/week', async (req, res) => {
+  try {
+
+    const weekStarts = startOfWeek(new Date(), { weekStartsOn: 1 })
+
+    const records = await Attendance.find({
+      date: { $gte: weekStarts },
+    }).populate('userId');
+
     res.json(records);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch attendance' });
