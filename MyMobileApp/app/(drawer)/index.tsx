@@ -1,3 +1,4 @@
+// ... [IMPORTS unchanged]
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -12,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 
-const API = 'http://192.168.100.174:5000'; // ✅ Replace with your server if needed
+const API = 'http://192.168.100.174:5000';
 
 type AttendanceRecord = {
   _id: string;
@@ -31,6 +32,32 @@ export default function AuthAttendanceScreen() {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
+
+  // ⏱️ Timer states
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Helper to format seconds as hh:mm:ss
+  const formatTime = (totalSeconds: number) => {
+    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
+  };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning]);
 
   const extractNameFromToken = (jwt: string): string => {
     try {
@@ -64,7 +91,10 @@ export default function AuthAttendanceScreen() {
         return date >= sevenDaysAgo;
       });
 
-      filtered.sort((a, b) => new Date(b.signedInAt || b.signedOutAt || '').getTime() - new Date(a.signedInAt || a.signedOutAt || '').getTime());
+      filtered.sort((a, b) =>
+        new Date(b.signedInAt || b.signedOutAt || '').getTime() -
+        new Date(a.signedInAt || a.signedOutAt || '').getTime()
+      );
 
       setAttendance(filtered);
 
@@ -96,6 +126,8 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed in');
       fetchLast7Days();
+      setElapsedSeconds(0);     // ⏱️ Reset timer
+      setIsTimerRunning(true);  // ⏱️ Start timer
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -119,6 +151,8 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed out');
       fetchLast7Days();
+      setIsTimerRunning(false); // ⏱️ Stop timer
+      setElapsedSeconds(0);     // ⏱️ Reset timer
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -155,9 +189,8 @@ export default function AuthAttendanceScreen() {
 
   const formatDateTitle = () => {
     const now = new Date();
-    return format(now, "EEE - dd MMM, yyyy");
+    return format(now, 'EEE - dd MMM, yyyy');
   };
-
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -218,10 +251,18 @@ export default function AuthAttendanceScreen() {
                   </View>
                 </View>
               </View>
+
+              {/* 🕒 TIMER DISPLAY */}
+              {isTimerRunning && (
+                <View style={{ marginTop: 10 }}>
+                  <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                    Time Since Sign In: <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+                  </Text>
+                </View>
+              )}
             </View>
           );
         })()}
-
 
         <Text style={styles.subtitle}>Last Week's Attendance</Text>
 
@@ -231,32 +272,15 @@ export default function AuthAttendanceScreen() {
           <Text>No records found.</Text>
         ) : (
           <View style={styles.tableContainer}>
-            {/* {attendance.map((record) => {
-              const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
-              const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
-              const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
-
-              return (
-                <View key={record._id} style={styles.recordBlock}>
-                  <Text style={styles.recordDate}>{date}</Text>
-                  <View style={styles.recordRow}>
-                    <View style={styles.recordColumn}>
-                      <Text style={styles.columnTitle}>Signed In</Text>
-                      <Text style={styles.columnValue}>{signedIn}</Text>
-                    </View>
-                    <View style={styles.recordColumn}>
-                      <Text style={styles.columnTitle}>Signed Out</Text>
-                      <Text style={styles.columnValue}>{signedOut}</Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            })} */}
             {attendance.map((record) => {
               const date = new Date(record.signedInAt || record.signedOutAt || '');
-              const formattedDate = format(date, "EEE - dd MMM, yyyy");
-              const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
-              const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
+              const formattedDate = format(date, 'EEE - dd MMM, yyyy');
+              const signedIn = record.signedInAt
+                ? new Date(record.signedInAt).toLocaleTimeString()
+                : '-';
+              const signedOut = record.signedOutAt
+                ? new Date(record.signedOutAt).toLocaleTimeString()
+                : '-';
 
               return (
                 <View key={record._id} style={styles.recordBlock}>
@@ -274,7 +298,6 @@ export default function AuthAttendanceScreen() {
                 </View>
               );
             })}
-
           </View>
         )}
       </View>

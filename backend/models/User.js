@@ -19,6 +19,10 @@ const userSchema = new mongoose.Schema({
   password: String,          // ⚠️ Stores plain password
   passwordHashed: String,    // ✅ Keeps hashed password (for login)
   role: String,
+  workingHours: {
+    type: Number,
+    default: 9, // default working hours in hours
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
