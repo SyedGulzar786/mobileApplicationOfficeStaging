@@ -153,10 +153,10 @@ export default function AuthAttendanceScreen() {
     return messages[day] || 'Have a great day!';
   };
 
-const formatDateTitle = () => {
-  const now = new Date();
-  return format(now, "EEE - dd MMM, yyyy");
-};
+  const formatDateTitle = () => {
+    const now = new Date();
+    return format(now, "EEE - dd MMM, yyyy");
+  };
 
 
   return (
@@ -184,6 +184,44 @@ const formatDateTitle = () => {
         </View>
 
         <Text style={styles.dateHeading}>{formatDateTitle()}</Text>
+
+        {/* Today's Record */}
+        {(() => {
+          const today = new Date().toDateString();
+          const todaysRecord = attendance.find((record) => {
+            const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
+            return date === today;
+          });
+
+          if (!todaysRecord) {
+            return <Text style={styles.noToday}>No attendance record for today.</Text>;
+          }
+
+          const signedIn = todaysRecord.signedInAt
+            ? new Date(todaysRecord.signedInAt).toLocaleTimeString()
+            : '-';
+          const signedOut = todaysRecord.signedOutAt
+            ? new Date(todaysRecord.signedOutAt).toLocaleTimeString()
+            : '-';
+
+          return (
+            <View style={styles.tableContainer}>
+              <View style={styles.recordBlock}>
+                <View style={styles.recordRow}>
+                  <View style={styles.recordColumn}>
+                    <Text style={styles.largeColumnTitle}>Signed In</Text>
+                    <Text style={styles.columnValue}>{signedIn}</Text>
+                  </View>
+                  <View style={styles.recordColumn}>
+                    <Text style={styles.largeColumnTitle}>Signed Out</Text>
+                    <Text style={styles.columnValue}>{signedOut}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          );
+        })()}
+
 
         <Text style={styles.subtitle}>Last Week's Attendance</Text>
 
@@ -215,27 +253,27 @@ const formatDateTitle = () => {
               );
             })} */}
             {attendance.map((record) => {
-  const date = new Date(record.signedInAt || record.signedOutAt || '');
-  const formattedDate = format(date, "EEE - dd MMM, yyyy");
-  const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
-  const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
+              const date = new Date(record.signedInAt || record.signedOutAt || '');
+              const formattedDate = format(date, "EEE - dd MMM, yyyy");
+              const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
+              const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
 
-  return (
-    <View key={record._id} style={styles.recordBlock}>
-      <Text style={styles.recordDate}>{formattedDate}</Text>
-      <View style={styles.largeRecordRow}>
-        <View style={styles.largeColumn}>
-          <Text style={styles.columnTitle}>Signed In</Text>
-          <Text style={styles.columnValue}>{signedIn}</Text>
-        </View>
-        <View style={styles.largeColumn}>
-          <Text style={styles.columnTitle}>Signed Out</Text>
-          <Text style={styles.columnValue}>{signedOut}</Text>
-        </View>
-      </View>
-    </View>
-  );
-})}
+              return (
+                <View key={record._id} style={styles.recordBlock}>
+                  <Text style={styles.recordDate}>{formattedDate}</Text>
+                  <View style={styles.largeRecordRow}>
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.columnTitle}>Signed In</Text>
+                      <Text style={styles.largeColumnValue}>{signedIn}</Text>
+                    </View>
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.columnTitle}>Signed Out</Text>
+                      <Text style={styles.largeColumnValue}>{signedOut}</Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
 
           </View>
         )}
@@ -321,11 +359,10 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   columnValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     // color: '#2ecc71',
-  color: '#27ae60',
-
+    color: '#27ae60',
     marginTop: 5,
   },
   buttonRow: {
@@ -370,29 +407,47 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   largeRecordRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-around',
-  paddingVertical: 10,
-  backgroundColor: '#f1f1f1',
-  borderRadius: 10,
-},
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 10,
+  },
 
-largeColumn: {
-  flex: 1,
-  alignItems: 'center',
-},
+  largeColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
 
-largeColumnTitle: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: '#2c3e50',
-  marginBottom: 5,
-},
+  largeColumnTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 5,
+  },
 
-largeColumnValue: {
-  fontSize: 24,
-  fontWeight: 'bold',
-  color: '#27ae60',
-},
+  largeColumnValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    // color: '#2ecc71',
+
+  },
+  todayContainer: {
+    marginTop: 15,
+    marginBottom: 10,
+    padding: 15,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 10,
+  },
+
+  noToday: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#888',
+  },
+
+
 
 });
