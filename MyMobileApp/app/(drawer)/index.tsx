@@ -155,7 +155,7 @@ export default function AuthAttendanceScreen() {
 
 const formatDateTitle = () => {
   const now = new Date();
-  return format(now, "EEE - dd-MMM, yyyy");
+  return format(now, "EEE - dd MMM, yyyy");
 };
 
 
@@ -193,7 +193,7 @@ const formatDateTitle = () => {
           <Text>No records found.</Text>
         ) : (
           <View style={styles.tableContainer}>
-            {attendance.map((record) => {
+            {/* {attendance.map((record) => {
               const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
               const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
               const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
@@ -213,7 +213,30 @@ const formatDateTitle = () => {
                   </View>
                 </View>
               );
-            })}
+            })} */}
+            {attendance.map((record) => {
+  const date = new Date(record.signedInAt || record.signedOutAt || '');
+  const formattedDate = format(date, "EEE - dd MMM, yyyy");
+  const signedIn = record.signedInAt ? new Date(record.signedInAt).toLocaleTimeString() : '-';
+  const signedOut = record.signedOutAt ? new Date(record.signedOutAt).toLocaleTimeString() : '-';
+
+  return (
+    <View key={record._id} style={styles.recordBlock}>
+      <Text style={styles.recordDate}>{formattedDate}</Text>
+      <View style={styles.largeRecordRow}>
+        <View style={styles.largeColumn}>
+          <Text style={styles.columnTitle}>Signed In</Text>
+          <Text style={styles.columnValue}>{signedIn}</Text>
+        </View>
+        <View style={styles.largeColumn}>
+          <Text style={styles.columnTitle}>Signed Out</Text>
+          <Text style={styles.columnValue}>{signedOut}</Text>
+        </View>
+      </View>
+    </View>
+  );
+})}
+
           </View>
         )}
       </View>
@@ -300,7 +323,9 @@ const styles = StyleSheet.create({
   columnValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2ecc71',
+    // color: '#2ecc71',
+  color: '#27ae60',
+
     marginTop: 5,
   },
   buttonRow: {
@@ -344,4 +369,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 15,
   },
+  largeRecordRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-around',
+  paddingVertical: 10,
+  backgroundColor: '#f1f1f1',
+  borderRadius: 10,
+},
+
+largeColumn: {
+  flex: 1,
+  alignItems: 'center',
+},
+
+largeColumnTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#2c3e50',
+  marginBottom: 5,
+},
+
+largeColumnValue: {
+  fontSize: 24,
+  fontWeight: 'bold',
+  color: '#27ae60',
+},
+
 });
