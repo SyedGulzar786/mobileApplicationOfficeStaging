@@ -1,0 +1,29 @@
+<% title = 'Working Hours' %>
+
+<h2>Set Working Hours for Users</h2>
+
+<table class="table table-bordered table-hover">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Current Hours</th>
+      <th>Update</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% users.forEach(user => { %>
+      <tr>
+        <td><%= user.name %></td>
+        <td><%= user.email %></td>
+        <td><%= user.workingHours || 9 %> hrs</td>
+        <td>
+          <form method="POST" action="/admin/working-hours/<%= user._id %>/update" class="d-flex">
+            <input type="number" name="workingHours" step="0.1" min="1" class="form-control me-2" placeholder="e.g. 9" required />
+            <button class="btn btn-sm btn-primary">Update</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

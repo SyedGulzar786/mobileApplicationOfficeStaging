@@ -115,6 +115,18 @@ app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/users');
 });
 
+// WORKING HOURS CRUD TAB
+app.get('/admin/working-hours', requireAdminAuth, async (req, res) => {
+  const users = await User.find();
+  res.render('working-hours', { title: 'Working Hours', users });
+});
+
+app.post('/admin/working-hours/:id/update', requireAdminAuth, async (req, res) => {
+  const { workingHours } = req.body;
+  await User.findByIdAndUpdate(req.params.id, { workingHours: parseFloat(workingHours) });
+  res.redirect('/admin/working-hours');
+});
+
 // Attendance with filters
 app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
   const { name, date, range } = req.query;

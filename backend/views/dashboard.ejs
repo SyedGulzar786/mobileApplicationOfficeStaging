@@ -1,11 +1,15 @@
-
 <% title = 'Dashboard' %>
 
 <h2>User Management</h2>
 <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="filterTable()">
 <table id="userTable">
   <thead>
-    <tr><th>Name</th><th>Email</th><th>Role</th></tr>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Role</th>
+      <th>Working Hours</th> <!-- ✅ New column -->
+    </tr>
   </thead>
   <tbody>
     <% users.forEach(user => { %>
@@ -13,6 +17,7 @@
         <td><%= user.name %></td>
         <td><%= user.email %></td>
         <td><%= user.role || 'User' %></td>
+        <td><%= user.workingHours || 9 %> hrs</td> <!-- ✅ Display working hours -->
       </tr>
     <% }) %>
   </tbody>
