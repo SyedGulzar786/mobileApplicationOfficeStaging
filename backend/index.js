@@ -81,7 +81,7 @@ app.get('/admin/users', requireAdminAuth, async (req, res) => {
 });
 
 app.post('/admin/users', requireAdminAuth, async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, workingHours } = req.body;
   if (!password) return res.redirect('/admin/users');
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -89,21 +89,28 @@ app.post('/admin/users', requireAdminAuth, async (req, res) => {
   await User.create({
     name,
     email,
-    password,               // plain password
+    password,
     passwordHashed: hashedPassword,
     role,
+    workingHours: workingHours ? parseFloat(workingHours) : 9,
   });
 
   res.redirect('/admin/users');
 });
 
 app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
-  const { name, email, role, password } = req.body;
-  const updateData = { name, email, role };
+  const { name, email, role, password, workingHours } = req.body;
+
+  const updateData = {
+    name,
+    email,
+    role,
+    workingHours: workingHours ? parseFloat(workingHours) : 9,
+  };
 
   if (password && password.trim()) {
-    updateData.password = password; // ✅ plain
-    updateData.passwordHashed = await bcrypt.hash(password, 10); // ✅ hashed
+    updateData.password = password;
+    updateData.passwordHashed = await bcrypt.hash(password, 10);
   }
 
   await User.findByIdAndUpdate(req.params.id, updateData);
@@ -113,6 +120,17 @@ app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
 app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.redirect('/admin/users');
+});
+
+app.post('/admin/users/:id/working-hours', requireAdminAuth, async (req, res) => {
+  const { workingHours } = req.body;
+  try {
+    await User.findByIdAndUpdate(req.params.id, { workingHours });
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('Error updating working hours:', err);
+    res.status(500).send('Error updating working hours');
+  }
 });
 
 // WORKING HOURS CRUD TAB

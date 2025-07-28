@@ -32,7 +32,7 @@ const attendanceSchema = new mongoose.Schema({
     default: null,
   },
   timeWorked: {
-    type: Number, // Time worked in seconds
+    type: Number, // Time worked in hours
     default: 0,
   }
 });

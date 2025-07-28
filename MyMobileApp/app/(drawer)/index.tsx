@@ -24,7 +24,9 @@ type AttendanceRecord = {
   } | null;
   signedInAt?: string;
   signedOutAt?: string;
+  timeWorked?: number; // ⏱️ newly added
 };
+
 
 export default function AuthAttendanceScreen() {
   const { token, isAuthReady, isLoggedIn } = useAuth();
@@ -193,13 +195,23 @@ export default function AuthAttendanceScreen() {
     return format(now, 'EEE - dd MMM, yyyy');
   };
 
+  const formatHoursAndMinutes = (decimalHours: number): string => {
+  const totalMinutes = Math.round(decimalHours * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours > 0 ? `${hours} hr${hours > 1 ? 's' : ''}` : ''}${
+    minutes > 0 ? ` ${minutes} min${minutes > 1 ? 's' : ''}` : ''
+  }`.trim();
+};
+
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>
-          <Text style={styles.welcome}>Welcome {userName}!</Text>
+        <View style={styles.title}>
+          <Text style={[styles.welcome]}>Welcome {userName}!</Text>
           <Text style={styles.motivation}>{getMotivationalText()}</Text>
-        </Text>
+        </View>
 
         <View style={styles.buttonRow}>
           <TouchableOpacity
@@ -251,23 +263,35 @@ export default function AuthAttendanceScreen() {
                     <Text style={styles.columnValue}>{signedOut}</Text>
                   </View>
                 </View>
+                {!isTimerRunning && todaysRecord.timeWorked != null && (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                      Time Worked Today:{' '}
+                      <Text style={{ fontWeight: 'bold' }}>
+                     {formatHoursAndMinutes(todaysRecord.timeWorked!)}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
+
               </View>
+
 
               {/* 🕒 TIMER DISPLAY */}
               {isTimerRunning && (
-<View style={{ marginTop: 10 }}>
-  {isTimerRunning ? (
-    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-      Time Since Sign In:{' '}
-      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-    </Text>
-  ) : elapsedSeconds > 0 ? (
-    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-      Total Time Worked:{' '}
-      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-    </Text>
-  ) : null}
-</View>
+                <View style={{ marginTop: 10 }}>
+                  {isTimerRunning ? (
+                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                      Time Since Sign In:{' '}
+                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+                    </Text>
+                  ) : elapsedSeconds > 0 ? (
+                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                      Total Time Worked:{' '}
+                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+                    </Text>
+                  ) : null}
+                </View>
 
               )}
             </View>
@@ -297,14 +321,21 @@ export default function AuthAttendanceScreen() {
                   <Text style={styles.recordDate}>{formattedDate}</Text>
                   <View style={styles.largeRecordRow}>
                     <View style={styles.largeColumn}>
-                      <Text style={styles.columnTitle}>Signed In</Text>
-                      <Text style={styles.largeColumnValue}>{signedIn}</Text>
+                      <Text style={styles.weekColumnTitle}>Signed In</Text>
+                      <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
                     </View>
                     <View style={styles.largeColumn}>
-                      <Text style={styles.columnTitle}>Signed Out</Text>
-                      <Text style={styles.largeColumnValue}>{signedOut}</Text>
+                      <Text style={styles.weekColumnTitle}>Signed Out</Text>
+                      <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
+                    </View>
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.weekColumnTitle}>Time Worked</Text>
+                      <Text style={styles.weekLargeColumnValue}>
+                    {record.timeWorked ? formatHoursAndMinutes(record.timeWorked) : '--'}
+                      </Text>
                     </View>
                   </View>
+
                 </View>
               );
             })}
@@ -322,14 +353,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   container: {
-    padding: 20,
+    padding: 10,
     flexGrow: 1,
     alignItems: 'center',
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
-    padding: 20,
+    padding: 10,
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -337,11 +368,17 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    welcome: {
+    fontSize: 26,
+        fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  motivation: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 15,
   },
   subtitle: {
     fontSize: 20,
@@ -391,8 +428,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#555',
   },
+  largeColumnTitle: {
+    fontSize: 21,
+    fontWeight: '500',
+    color: '#555',
+  },
   columnValue: {
-    fontSize: 24,
+    fontSize: 21,
     fontWeight: 'bold',
     // color: '#2ecc71',
     color: '#27ae60',
@@ -430,15 +472,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
-  welcome: {
-    fontSize: 26,
-  },
-  motivation: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
+  // largeRecordRow: {
+  //   // flexDirection: 'row',
+  //   // justifyContent: 'space-around',
+  //   paddingVertical: 10,
+  //   backgroundColor: '#f1f1f1',
+  //   borderRadius: 10,
+  // },
   largeRecordRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -452,13 +492,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  largeColumnTitle: {
-    fontSize: 18,
+  weekColumnTitle: {
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 5,
   },
 
+  weekLargeColumnValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#27ae60',
+    // color: '#2ecc71',
+
+  },
   largeColumnValue: {
     fontSize: 20,
     fontWeight: 'bold',
