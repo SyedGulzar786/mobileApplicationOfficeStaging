@@ -61,10 +61,10 @@
       <tr>
         <th>Name</th>
         <th>Email</th>
-        <!-- <th>Password</th> -->
         <th>Date</th>
         <th>Signed In</th>
         <th>Signed Out</th>
+        <th><b>Time Worked (hrs)</b></th> <!-- ✅ New -->
         <th>Actions</th>
       </tr>
     </thead>
@@ -81,13 +81,20 @@
             <%= record.userId?.password || 'N/A' %>
           </td> -->
           <td>
-          <%= record.date.toDateString() %>  <!-- if you show record.date -->
+            <%= record.date.toDateString() %> <!-- if you show record.date -->
           </td>
           <td>
             <%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %>
           </td>
           <td>
             <%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %>
+          </td>
+          <td>
+            <% if (record.timeWorked !=null) { %>
+              <%= record.timeWorked.toFixed(2) %> hrs
+                <% } else { %>
+                  -
+                  <% } %>
           </td>
 
           <td class="d-flex gap-2">

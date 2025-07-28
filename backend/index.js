@@ -373,13 +373,12 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
-  // Normalize today's date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const existing = await Attendance.findOne({
     userId,
-    date: today  // ✅ search by normalized date
+    date: today
   });
 
   if (!existing || !existing.signedInAt) {
@@ -390,9 +389,16 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: 'Already signed out today' });
   }
 
-  existing.signedOutAt = new Date();
+  const signOutTime = new Date();
+  const durationMs = signOutTime - existing.signedInAt;
+  const durationHours = durationMs / (1000 * 60 * 60); // convert ms → hours
+
+  existing.signedOutAt = signOutTime;
+  existing.timeWorked = durationHours;
+
   await existing.save();
-  return res.status(200).json({ message: 'Signed out successfully' });
+
+  return res.status(200).json({ message: 'Signed out and time worked recorded' });
 });
 
 app.get('/today', async (req, res) => {

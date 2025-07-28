@@ -12,8 +12,6 @@
 // });
 
 // module.exports = mongoose.model('Attendance', attendanceSchema);
-
-
 const mongoose = require('mongoose');
 
 const attendanceSchema = new mongoose.Schema({
@@ -25,13 +23,17 @@ const attendanceSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  signedInAt: {       // ✅ rename
+  signedInAt: {
     type: Date,
     default: null,
   },
-  signedOutAt: {      // ✅ rename
+  signedOutAt: {
     type: Date,
     default: null,
+  },
+  timeWorked: {
+    type: Number, // Time worked in seconds
+    default: 0,
   }
 });
 

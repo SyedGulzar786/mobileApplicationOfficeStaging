@@ -46,7 +46,7 @@ export default function AuthAttendanceScreen() {
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: number;
 
     if (isTimerRunning) {
       interval = setInterval(() => {
@@ -58,6 +58,7 @@ export default function AuthAttendanceScreen() {
       if (interval) clearInterval(interval);
     };
   }, [isTimerRunning]);
+
 
   const extractNameFromToken = (jwt: string): string => {
     try {
@@ -152,7 +153,7 @@ export default function AuthAttendanceScreen() {
       Alert.alert('Success', data.message || 'Signed out');
       fetchLast7Days();
       setIsTimerRunning(false); // ⏱️ Stop timer
-      setElapsedSeconds(0);     // ⏱️ Reset timer
+      // setElapsedSeconds(0);     // ❌ Remove this line for now ← 🛑 Do NOT reset yet (we'll show it first)
     } catch {
       Alert.alert('Error', 'Something went wrong');
     }
@@ -254,17 +255,26 @@ export default function AuthAttendanceScreen() {
 
               {/* 🕒 TIMER DISPLAY */}
               {isTimerRunning && (
-                <View style={{ marginTop: 10 }}>
-                  <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                    Time Since Sign In: <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-                  </Text>
-                </View>
+<View style={{ marginTop: 10 }}>
+  {isTimerRunning ? (
+    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+      Time Since Sign In:{' '}
+      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+    </Text>
+  ) : elapsedSeconds > 0 ? (
+    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+      Total Time Worked:{' '}
+      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+    </Text>
+  ) : null}
+</View>
+
               )}
             </View>
           );
         })()}
 
-        <Text style={styles.subtitle}>Last Week's Attendance</Text>
+        <Text style={styles.subtitle}>This Week's Attendance</Text>
 
         {loading ? (
           <ActivityIndicator size="small" color="#888" />
