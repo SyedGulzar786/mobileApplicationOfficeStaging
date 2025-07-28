@@ -208,7 +208,7 @@ export default function AuthAttendanceScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <View style={styles.title}>
+        <View>
           <Text style={[styles.welcome]}>Welcome {userName}!</Text>
           <Text style={styles.motivation}>{getMotivationalText()}</Text>
         </View>
