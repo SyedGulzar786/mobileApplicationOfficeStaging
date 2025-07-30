@@ -1,117 +1,128 @@
 <% title='Users' %>
 
-<h2>User Management</h2>
+  <h2>User Management</h2>
 
-<form method="POST" action="/admin/users" class="mb-3" onsubmit="return prepareWorkingHours(this)">
-  <div class="row">
-    <div class="col">
-      <input type="text" name="name" class="form-control" placeholder="Name" required />
-    </div>
-    <div class="col">
-      <input type="email" name="email" class="form-control" placeholder="Email" required />
-    </div>
-    <div class="col">
-      <div class="input-group">
-        <input type="password" name="password" placeholder="Password" id="passwordField" class="form-control" required />
-        <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility()">👁️</button>
+  <form method="POST" action="/admin/users" class="mb-3" onsubmit="return prepareWorkingHours(this)">
+    <div class="row">
+      <div class="col">
+        <input type="text" name="name" class="form-control" placeholder="Name" required />
+      </div>
+      <div class="col">
+        <input type="email" name="email" class="form-control" placeholder="Email" required />
+      </div>
+      <div class="col">
+        <div class="input-group">
+          <input type="password" name="password" placeholder="Password" id="passwordField" class="form-control"
+            required />
+          <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility()">👁️</button>
+        </div>
+      </div>
+      <div class="col">
+        <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
+      </div>
+      <div class="col d-flex gap-1 align-items-center">
+        <input type="number" name="workingHoursHours" class="form-control" placeholder="HH" style="width: 60px;"
+          min="0" />
+        <span>:</span>
+        <input type="number" name="workingHoursMinutes" class="form-control" placeholder="MM" style="width: 60px;"
+          min="0" />
+        <input type="hidden" name="workingHours" id="workingHoursField" />
+      </div>
+      <div class="col">
+        <button type="submit" class="btn btn-primary">Add User</button>
       </div>
     </div>
-    <div class="col">
-      <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
-    </div>
-<div class="col d-flex gap-1 align-items-center">
-  <input type="number" name="hours" class="form-control" placeholder="HH" style="width: 60px;" min="0" />
-  <span>:</span>
-  <input type="number" name="minutes" class="form-control" placeholder="MM" style="width: 60px;" min="0" />
-  <input type="hidden" name="workingHours" id="workingHoursField" />
-</div>
-    <div class="col">
-      <button type="submit" class="btn btn-primary">Add User</button>
-    </div>
-  </div>
-</form>
+  </form>
 
-<table class="table table-bordered table-hover mt-4">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Role</th>
-      <th>Password</th>
-      <th>Working Time</th>
-      <th>Created</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% users.forEach(user => {
-      const [hr, min] = (user.workingHours || '00:00').split(':'); %>
+  <table class="table table-bordered table-hover mt-4">
+    <thead>
       <tr>
-        <form method="POST" action="/admin/users/<%= user._id %>/edit" onsubmit="return prepareUserWorkingHours('<%= user._id %>')">
-          <td>
-            <input type="text" name="name" value="<%= user.name %>" class="form-control" />
-          </td>
-          <td>
-            <input type="email" name="email" value="<%= user.email %>" class="form-control" />
-          </td>
-          <td>
-            <input type="text" name="role" value="<%= user.role || '' %>" class="form-control" />
-          </td>
-          <td>
-            <div style="position: relative;">
-              <input type="password" id="pw-<%= user._id %>" class="form-control" value="<%= user.password %>" readonly />
-              <span onclick="togglePassword('<%= user._id %>')" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
-            </div>
-          </td>
-          <td class="d-flex gap-1">
-            <input type="number" id="hours-<%= user._id %>" name="hours" value="<%= hr %>" class="form-control" style="width: 60px;" min="0" />
-            <span class="mt-2">:</span>
-            <input type="number" id="minutes-<%= user._id %>" name="minutes" value="<%= min %>" class="form-control" style="width: 60px;" min="0" />
-            <input type="hidden" name="workingHours" id="workingHoursField-<%= user._id %>" />
-          </td>
-          <td>
-            <%= new Date(user.createdAt).toLocaleDateString() %>
-          </td>
-          <td>
-            <button class="btn btn-success btn-sm">Update</button>
-        </form>
-        <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete this user?')">
-          <button class="btn btn-danger btn-sm mt-1">Delete</button>
-        </form>
-          </td>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Password</th>
+        <th>Working Time</th>
+        <th>Created</th>
+        <th>Actions</th>
       </tr>
-    <% }) %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% users.forEach(user=> {
+        const [hr, min] = (user.workingHours || '00:00').split(':'); %>
+        <tr>
+          <form method="POST" action="/admin/users/<%= user._id %>/edit"
+            onsubmit="return prepareUserWorkingHours('<%= user._id %>')">
+            <td>
+              <input type="text" name="name" value="<%= user.name %>" class="form-control" />
+            </td>
+            <td>
+              <input type="email" name="email" value="<%= user.email %>" class="form-control" />
+            </td>
+            <td>
+              <input type="text" name="role" value="<%= user.role || '' %>" class="form-control" />
+            </td>
+            <td>
+              <div style="position: relative;">
+                <input type="password" id="pw-<%= user._id %>" class="form-control" value="<%= user.password %>"
+                  readonly />
+                <span onclick="togglePassword('<%= user._id %>')"
+                  style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
+              </div>
+            </td>
+            <td class="d-flex gap-1">
+              <input type="number" id="hours-<%= user._id %>" name="workingHoursHours" value="<%= hr %>"
+                class="form-control" style="width: 60px;" min="0" />
+              <span class="mt-2">:</span>
+              <input type="number" id="minutes-<%= user._id %>" name="workingHoursMinutes" value="<%= min %>"
+                class="form-control" style="width: 60px;" min="0" />
+              <input type="hidden" name="workingHours" id="workingHoursField-<%= user._id %>" />
+            </td>
+            <td>
+              <%= new Date(user.createdAt).toLocaleDateString() %>
+            </td>
+            <td>
+              <button class="btn btn-success btn-sm">Update</button>
+          </form>
+          <form method="POST" action="/admin/users/<%= user._id %>/delete"
+            onsubmit="return confirm('Delete this user?')">
+            <button class="btn btn-danger btn-sm mt-1">Delete</button>
+          </form>
+          </td>
+        </tr>
+        <% }) %>
+    </tbody>
+  </table>
 
-<script>
-  function togglePasswordVisibility() {
-    const passwordField = document.getElementById('passwordField');
-    passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
-  }
+  <script>
+    function togglePasswordVisibility() {
+      const passwordField = document.getElementById('passwordField');
+      passwordField.type = passwordField.type === 'password' ? 'text' : 'password';
+    }
 
-  function togglePassword(id) {
-    const input = document.getElementById('pw-' + id);
-    input.type = input.type === 'password' ? 'text' : 'password';
-  }
+    function togglePassword(id) {
+      const input = document.getElementById('pw-' + id);
+      input.type = input.type === 'password' ? 'text' : 'password';
+    }
 
-  function prepareWorkingHours(form) {
-    const hours = parseInt(form.querySelector('input[name="hours"]')?.value || '0', 10);
-    const minutes = parseInt(form.querySelector('input[name="minutes"]')?.value || '0', 10);
-    const totalMinutes = hours * 60 + minutes;
-    const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
-    const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
-    form.querySelector('#workingHoursField').value = `${finalHours}:${finalMinutes}`;
-    return true;
-  }
+    function prepareWorkingHours(form) {
+      const hours = parseInt(form.querySelector('input[name="workingHoursHours"]')?.value || '0', 10);
+      const minutes = parseInt(form.querySelector('input[name="workingHoursMinutes"]')?.value || '0', 10);
+      const totalMinutes = hours * 60 + minutes;
+      const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+      const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
+      form.querySelector('#workingHoursField').value = `${finalHours}:${finalMinutes}`;
+      return true;
+    }
 
-  function prepareUserWorkingHours(userId) {
-    const hours = parseInt(document.getElementById(`hours-${userId}`).value || '0', 10);
-    const minutes = parseInt(document.getElementById(`minutes-${userId}`).value || '0', 10);
-    const totalMinutes = hours * 60 + minutes;
-    const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
-    const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
-    document.getElementById(`workingHoursField-${userId}`).value = `${finalHours}:${finalMinutes}`;
-    return true;
-  }
-</script>
+
+    function prepareUserWorkingHours(userId) {
+      const hours = parseInt(document.getElementById(`hours-${userId}`).value || '0', 10);
+      const minutes = parseInt(document.getElementById(`minutes-${userId}`).value || '0', 10);
+      const totalMinutes = hours * 60 + minutes;
+      const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+      const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
+      document.getElementById(`workingHoursField-${userId}`).value = `${finalHours}:${finalMinutes}`;
+      return true;
+    }
+
+  </script>

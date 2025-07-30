@@ -81,7 +81,12 @@ app.get('/admin/users', requireAdminAuth, async (req, res) => {
 });
 
 app.post('/admin/users', requireAdminAuth, async (req, res) => {
-  const { name, email, password, role, workingHours } = req.body;
+  const { name, email, password, role, workingHoursHours, workingHoursMinutes } = req.body;
+  const safeHours = (workingHoursHours || '0').toString().padStart(2, '0');
+  const safeMinutes = (workingHoursMinutes || '0').toString().padStart(2, '0');
+  const formattedWorkingHours = `${safeHours}:${safeMinutes}`;
+
+
   if (!password) return res.redirect('/admin/users');
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -92,20 +97,24 @@ app.post('/admin/users', requireAdminAuth, async (req, res) => {
     password,
     passwordHashed: hashedPassword,
     role,
-    workingHours: workingHours ? parseFloat(workingHours) : 9,
+    workingHours: formattedWorkingHours,
   });
 
   res.redirect('/admin/users');
 });
 
 app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
-  const { name, email, role, password, workingHours } = req.body;
+  const { name, email, role, password, workingHoursHours, workingHoursMinutes } = req.body;
+
+  const safeHours = (workingHoursHours !== undefined ? workingHoursHours : '0').toString().padStart(2, '0');
+  const safeMinutes = (workingHoursMinutes !== undefined ? workingHoursMinutes : '0').toString().padStart(2, '0');
+  const formattedWorkingHours = `${safeHours}:${safeMinutes}`;
 
   const updateData = {
     name,
     email,
     role,
-    workingHours: workingHours ? parseFloat(workingHours) : 9,
+    workingHours: formattedWorkingHours,
   };
 
   if (password && password.trim()) {
@@ -176,8 +185,8 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
   }
 
   const records = await Attendance.find(query)
-  .sort({ date: -1 })  // Sort by latest first
-  .populate('userId');
+    .sort({ date: -1 })  // Sort by latest first
+    .populate('userId');
   const users = await User.find(); // ✅ REQUIRED
   res.render('attendance', {
     title: 'Attendance',
@@ -207,7 +216,7 @@ app.post('/admin/attendance/:id/edit', requireAdminAuth, async (req, res) => {
     });
 
     res.redirect('/admin/attendance');
-  } catch (err) { 
+  } catch (err) {
     console.error('Edit error:', err);
     res.redirect('/admin/attendance');
   }
@@ -301,9 +310,9 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({ 
-      name, 
-      email, 
+    const user = await User.create({
+      name,
+      email,
       password,             // plain text (for admin panel UI only)
       passwordHashed: hashedPassword,
       role: role || 'staff' // ✅ Default to 'staff' if not provided
