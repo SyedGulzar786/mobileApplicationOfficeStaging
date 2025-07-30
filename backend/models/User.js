@@ -10,6 +10,25 @@
 
 // module.exports = mongoose.model('User', userSchema);
 
+
+
+// const mongoose = require('mongoose');
+
+// const userSchema = new mongoose.Schema({
+//   name: String,
+//   email: String,
+//   phone: String,
+//   password: String,          // ⚠️ Stores plain password
+//   passwordHashed: String,    // ✅ Keeps hashed password (for login)
+//   role: String,
+//   workingHours: {
+//     type: Number,
+//     default: 9, // default working hours in hours
+//   },
+// }, { timestamps: true });
+
+// module.exports = mongoose.model('User', userSchema);
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -20,12 +39,13 @@ const userSchema = new mongoose.Schema({
   passwordHashed: String,    // ✅ Keeps hashed password (for login)
   role: String,
   workingHours: {
-    type: Number,
-    default: 9, // default working hours in hours
+    type: String,            // Changed from Number to String
+    default: "09:00",        // Format: HH:mm
   },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 

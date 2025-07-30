@@ -2,7 +2,7 @@
 
 <h2>User Management</h2>
 
-<form method="POST" action="/admin/users" class="mb-3">
+<form method="POST" action="/admin/users" class="mb-3" onsubmit="return prepareWorkingHours(this)">
   <div class="row">
     <div class="col">
       <input type="text" name="name" class="form-control" placeholder="Name" required />
@@ -20,7 +20,9 @@
       <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
     </div>
     <div class="col">
-      <input type="number" name="workingHours" class="form-control" placeholder="Working Hours (default 9)" />
+      <input type="number" name="hours" class="form-control mb-1" placeholder="Hours" min="0" />
+      <input type="number" name="minutes" class="form-control" placeholder="Minutes" min="0" />
+      <input type="hidden" name="workingHours" id="workingHoursField" />
     </div>
     <div class="col">
       <button type="submit" class="btn btn-primary">Add User</button>
@@ -28,42 +30,54 @@
   </div>
 </form>
 
-<table class="table table-bordered table-hover">
+<table class="table table-bordered table-hover mt-4">
   <thead>
     <tr>
       <th>Name</th>
       <th>Email</th>
       <th>Role</th>
       <th>Password</th>
-      <th>Working Hours</th>
+      <th>Working Time</th>
       <th>Created</th>
       <th>Actions</th>
     </tr>
   </thead>
   <tbody>
-    <% users.forEach(user => { %>
+    <% users.forEach(user => {
+      const [hr, min] = (user.workingHours || '00:00').split(':'); %>
       <tr>
-        <form method="POST" action="/admin/users/<%= user._id %>/edit">
-          <td><input type="text" name="name" value="<%= user.name %>" class="form-control" /></td>
-          <td><input type="email" name="email" value="<%= user.email %>" class="form-control" /></td>
-          <td><input type="text" name="role" value="<%= user.role || '' %>" class="form-control" /></td>
+        <form method="POST" action="/admin/users/<%= user._id %>/edit" onsubmit="return prepareUserWorkingHours('<%= user._id %>')">
+          <td>
+            <input type="text" name="name" value="<%= user.name %>" class="form-control" />
+          </td>
+          <td>
+            <input type="email" name="email" value="<%= user.email %>" class="form-control" />
+          </td>
+          <td>
+            <input type="text" name="role" value="<%= user.role || '' %>" class="form-control" />
+          </td>
           <td>
             <div style="position: relative;">
               <input type="password" id="pw-<%= user._id %>" class="form-control" value="<%= user.password %>" readonly />
               <span onclick="togglePassword('<%= user._id %>')" style="position: absolute; right: 10px; top: 10px; cursor: pointer;">👁️</span>
             </div>
           </td>
-          <td>
-            <input type="number" name="workingHours" value="<%= user.workingHours || 9 %>" class="form-control" />
+          <td class="d-flex gap-1">
+            <input type="number" id="hours-<%= user._id %>" name="hours" value="<%= hr %>" class="form-control" style="width: 60px;" min="0" />
+            <span class="mt-2">:</span>
+            <input type="number" id="minutes-<%= user._id %>" name="minutes" value="<%= min %>" class="form-control" style="width: 60px;" min="0" />
+            <input type="hidden" name="workingHours" id="workingHoursField-<%= user._id %>" />
           </td>
-          <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+          <td>
+            <%= new Date(user.createdAt).toLocaleDateString() %>
+          </td>
           <td>
             <button class="btn btn-success btn-sm">Update</button>
         </form>
         <form method="POST" action="/admin/users/<%= user._id %>/delete" onsubmit="return confirm('Delete this user?')">
-          <button class="btn btn-danger btn-sm">Delete</button>
+          <button class="btn btn-danger btn-sm mt-1">Delete</button>
         </form>
-        </td>
+          </td>
       </tr>
     <% }) %>
   </tbody>
@@ -78,5 +92,25 @@
   function togglePassword(id) {
     const input = document.getElementById('pw-' + id);
     input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  function prepareWorkingHours(form) {
+    const hours = parseInt(form.querySelector('input[name="hours"]')?.value || '0', 10);
+    const minutes = parseInt(form.querySelector('input[name="minutes"]')?.value || '0', 10);
+    const totalMinutes = hours * 60 + minutes;
+    const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
+    form.querySelector('#workingHoursField').value = `${finalHours}:${finalMinutes}`;
+    return true;
+  }
+
+  function prepareUserWorkingHours(userId) {
+    const hours = parseInt(document.getElementById(`hours-${userId}`).value || '0', 10);
+    const minutes = parseInt(document.getElementById(`minutes-${userId}`).value || '0', 10);
+    const totalMinutes = hours * 60 + minutes;
+    const finalHours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+    const finalMinutes = String(totalMinutes % 60).padStart(2, '0');
+    document.getElementById(`workingHoursField-${userId}`).value = `${finalHours}:${finalMinutes}`;
+    return true;
   }
 </script>
