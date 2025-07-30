@@ -19,11 +19,12 @@
     <div class="col">
       <input type="text" name="role" class="form-control" placeholder="Role (optional)" />
     </div>
-    <div class="col">
-      <input type="number" name="hours" class="form-control mb-1" placeholder="Hours" min="0" />
-      <input type="number" name="minutes" class="form-control" placeholder="Minutes" min="0" />
-      <input type="hidden" name="workingHours" id="workingHoursField" />
-    </div>
+<div class="col d-flex gap-1 align-items-center">
+  <input type="number" name="hours" class="form-control" placeholder="HH" style="width: 60px;" min="0" />
+  <span>:</span>
+  <input type="number" name="minutes" class="form-control" placeholder="MM" style="width: 60px;" min="0" />
+  <input type="hidden" name="workingHours" id="workingHoursField" />
+</div>
     <div class="col">
       <button type="submit" class="btn btn-primary">Add User</button>
     </div>
