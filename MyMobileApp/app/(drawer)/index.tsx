@@ -117,32 +117,32 @@ export default function AuthAttendanceScreen() {
     return messages[day] || "Have a great day!";
   };
 
-const sendMotivationalNotification = async () => {
-  const message = getWeeklySignOutMessage();
+  const sendMotivationalNotification = async () => {
+    const message = getWeeklySignOutMessage();
 
-  const { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') {
-    console.log('Notification permission not granted.');
-    return;
-  }
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.log('Notification permission not granted.');
+      return;
+    }
 
-  try {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Office App',
-        body: message,
-        sound: 'default',
-      },
-      trigger: null, // Show immediately
-    });
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Office App',
+          body: message,
+          sound: 'default',
+        },
+        trigger: null, // Show immediately
+      });
 
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    console.log('Scheduled notifications:', scheduled);
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      console.log('Scheduled notifications:', scheduled);
 
-  } catch (error) {
-    console.warn('Notification schedule failed:', error);
-  }
-};
+    } catch (error) {
+      console.warn('Notification schedule failed:', error);
+    }
+  };
 
 
 
@@ -196,6 +196,7 @@ const sendMotivationalNotification = async () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', // ✅ <-- ADD THIS LINE
       });
 
       const data = await res.json();
@@ -221,6 +222,7 @@ const sendMotivationalNotification = async () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', // ✅ <-- ADD THIS LINE
       });
 
       const data = await res.json();
