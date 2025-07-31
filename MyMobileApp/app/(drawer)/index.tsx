@@ -15,13 +15,14 @@ import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 
-
 // Set notification behavior globally
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -116,24 +117,34 @@ export default function AuthAttendanceScreen() {
     return messages[day] || "Have a great day!";
   };
 
-  const sendMotivationalNotification = async () => {
-    const message = getWeeklySignOutMessage();
+const sendMotivationalNotification = async () => {
+  const message = getWeeklySignOutMessage();
 
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted.');
-      return;
-    }
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== 'granted') {
+    console.log('Notification permission not granted.');
+    return;
+  }
 
+  try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Disconnected from Server',
+        title: 'Office App',
         body: message,
         sound: 'default',
       },
       trigger: null, // Show immediately
     });
-  };
+
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    console.log('Scheduled notifications:', scheduled);
+
+  } catch (error) {
+    console.warn('Notification schedule failed:', error);
+  }
+};
+
+
 
   const fetchLast7Days = async (tokenOverride?: string) => {
     try {
