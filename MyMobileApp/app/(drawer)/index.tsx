@@ -1,6 +1,7 @@
 // ... [IMPORTS unchanged]
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -61,7 +62,7 @@ export default function AuthAttendanceScreen() {
   };
 
   useEffect(() => {
-    let interval: number;
+    let interval: ReturnType<typeof setInterval>;
 
     if (isTimerRunning) {
       interval = setInterval(() => {
@@ -144,8 +145,6 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-
-
   const fetchLast7Days = async (tokenOverride?: string) => {
     try {
       const activeToken = tokenOverride || token;
@@ -177,13 +176,19 @@ export default function AuthAttendanceScreen() {
 
       const extractedName = extractNameFromToken(activeToken);
       if (extractedName) setUserName(extractedName);
+
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
-      await sendMotivationalNotification();
+
+      const status = await AsyncStorage.getItem('signedInStatus');
+      if (status === 'true') {
+        await sendMotivationalNotification();
+      }
+
       setAttendance([]);
+    }
 
-
-    } finally {
+    finally {
       setLoading(false);
     }
   };
@@ -206,6 +211,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed in');
+      await AsyncStorage.setItem('signedInStatus', 'true'); // ✅ Local sign-in flag
       fetchLast7Days();
       setElapsedSeconds(0);     // ⏱️ Reset timer
       setIsTimerRunning(true);  // ⏱️ Start timer
@@ -232,6 +238,7 @@ export default function AuthAttendanceScreen() {
       }
 
       Alert.alert('Success', data.message || 'Signed out');
+      await AsyncStorage.setItem('signedInStatus', 'false'); // ✅ Local sign-out flag
       fetchLast7Days();
       setIsTimerRunning(false); // ⏱️ Stop timer
       // setElapsedSeconds(0);     // ❌ Remove this line for now ← 🛑 Do NOT reset yet (we'll show it first)

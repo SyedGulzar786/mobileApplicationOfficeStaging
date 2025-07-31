@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const cors = require('cors');
+const cron = require('node-cron');
 
 const { startOfWeek } = require("date-fns");
 
@@ -527,6 +528,39 @@ mongoose.connect(process.env.MONGO_URI)
     app.listen(PORT, () => {
       console.log(`🚀 Server is running at http://localhost:${PORT}`);
     });
+    // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In
+    cron.schedule('5 0 * * *', async () => {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+        const allUsers = await User.find();
+
+        for (const user of allUsers) {
+          const alreadyMarked = await Attendance.findOne({
+            userId: user._id,
+            date: today
+          });
+
+          if (!alreadyMarked) {
+            await Attendance.create({
+              userId: user._id,
+              date: today,
+              signedInAt: null,
+              signedOutAt: null,
+              timeWorked: 0
+            });
+
+            console.log(`📌 Marked absent: ${user.name}`);
+          }
+        }
+
+        console.log('✅ Daily absence check completed.');
+      } catch (err) {
+        console.error('❌ Error in daily absence cron:', err.message);
+      }
+    });
+
   })
   .catch(err => {
     console.error('❌ MongoDB connection error:', err.message);

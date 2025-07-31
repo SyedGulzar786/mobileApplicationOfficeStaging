@@ -83,12 +83,31 @@
           <td>
             <%= record.date.toDateString() %> <!-- if you show record.date -->
           </td>
-          <td>
+          <!-- <td>
             <%= record.signedInAt ? record.signedInAt.toLocaleString() : 'Not signed in' %>
           </td>
           <td>
             <%= record.signedOutAt ? record.signedOutAt.toLocaleString() : 'Not signed out' %>
+          </td> -->
+          <td>
+            <% if (!record.signedInAt && !record.signedOutAt) { %>
+              <span class="badge bg-danger">Absent</span>
+              <% } else { %>
+                <%= record.signedInAt ? record.signedInAt.toLocaleString()
+                  : '<span class="text-muted">Not signed in</span>' %>
+                  <% } %>
           </td>
+          <td>
+            <% if (!record.signedInAt && !record.signedOutAt) { %>
+              <span class="badge bg-danger">Absent</span>
+              <% } else { %>
+                <%- record.signedOutAt ? record.signedOutAt.toLocaleString() : '<span class="text-muted">Not signed out</span>' %>
+
+                <!-- <%= record.signedOutAt ? record.signedOutAt.toLocaleString()
+                  : '<span class="text-muted">Not signed out</span>' %> -->
+                  <% } %>
+          </td>
+
           <td>
             <% if (record.timeWorked !=null) { %>
               <%= record.timeWorked.toFixed(2) %> hrs
