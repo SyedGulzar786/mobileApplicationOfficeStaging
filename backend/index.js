@@ -9,7 +9,6 @@ const path = require('path');
 const cors = require('cors');
 
 const { startOfWeek } = require("date-fns");
-;
 
 const User = require('./models/User');
 const Attendance = require('./models/Attendance');
@@ -54,19 +53,55 @@ app.get('/admin/login', (req, res) => {
   res.render('login', { title: 'Admin Login', error: null });
 });
 
+// app.post('/admin/login', async (req, res) => {
+//   const { email, password } = req.body;
+//   if (email !== process.env.ADMIN_EMAIL) {
+//     return res.render('login', { title: 'Admin Login', error: 'Access Denied: Not Admin' });
+//   }
+
+//   const match = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
+//   if (!match) return res.render('login', { error: 'Invalid credentials' });
+
+//   const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+//   // res.cookie('token', token, { httpOnly: true }); --> // ✅ Set cookie for admin session
+//   res.cookie('token', token, {                    // --> // ✅ Set cookie for admin session
+//     httpOnly: true,
+//     sameSite: 'lax', // not 'strict' (might block in cross-origin)
+//     secure: false,   // only true on https!
+//     secure: process.env.NODE_ENV === 'production',
+
+//   });
+
+//   res.redirect('/dashboard');
+// });
+
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.render('login', { title: 'Admin Login', error: 'Email and password required' });
+  }
+
   if (email !== process.env.ADMIN_EMAIL) {
     return res.render('login', { title: 'Admin Login', error: 'Access Denied: Not Admin' });
   }
 
   const match = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
-  if (!match) return res.render('login', { error: 'Invalid credentials' });
+  if (!match) {
+    return res.render('login', { title: 'Admin Login', error: 'Invalid credentials' });
+  }
 
-  const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
-  res.cookie('token', token, { httpOnly: true });
+  const token = jwt.sign({ email, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+  res.cookie('token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+
   res.redirect('/dashboard');
 });
+
 
 app.get('/logout', (req, res) => {
   res.clearCookie('token');
@@ -301,33 +336,33 @@ function authMiddleware(req, res, next) {
   });
 }
 
-app.post('/register', async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-    if (!email || !password || !name) {
-      return res.status(400).json({ message: 'All fields required' });
-    }
+// app.post('/register', async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
+//     if (!email || !password || !name) {
+//       return res.status(400).json({ message: 'All fields required' });
+//     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(409).json({ message: 'Email already in use' });
-    }
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return res.status(409).json({ message: 'Email already in use' });
+//     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      name,
-      email,
-      password,             // plain text (for admin panel UI only)
-      passwordHashed: hashedPassword,
-      role: role || 'staff' // ✅ Default to 'staff' if not provided
-    });
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     const user = await User.create({
+//       name,
+//       email,
+//       password,             // plain text (for admin panel UI only)
+//       passwordHashed: hashedPassword,
+//       role: role || 'staff' // ✅ Default to 'staff' if not provided
+//     });
 
-    res.status(201).json({ message: 'User registered', userId: user._id });
-  } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ error: 'Registration failed' });
-  }
-});
+//     res.status(201).json({ message: 'User registered', userId: user._id });
+//   } catch (err) {
+//     console.error('Registration error:', err);
+//     res.status(500).json({ error: 'Registration failed' });
+//   }
+// });
 
 app.post('/login', async (req, res) => {
   try {
