@@ -1,6 +1,4 @@
 // ... [IMPORTS unchanged]
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -14,16 +12,6 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
-
-
-// Set notification behavior globally
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 const API = 'http://192.168.100.174:5000';
 
@@ -73,25 +61,6 @@ export default function AuthAttendanceScreen() {
     };
   }, [isTimerRunning]);
 
-  useEffect(() => {
-    const registerForPushNotifications = async () => {
-      if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-        if (finalStatus !== 'granted') {
-          console.log('Failed to get push token for notifications!');
-        }
-      } else {
-        console.log('Must use physical device for Push Notifications');
-      }
-    };
-
-    registerForPushNotifications();
-  }, []);
 
   const extractNameFromToken = (jwt: string): string => {
     try {
@@ -101,38 +70,6 @@ export default function AuthAttendanceScreen() {
     } catch {
       return '';
     }
-  };
-
-  const getWeeklySignOutMessage = () => {
-    const day = new Date().toLocaleString('en-us', { weekday: 'long' }).toLowerCase();
-    const messages: Record<string, string> = {
-      monday: "You’ve done a great job today — now it’s time to check out, champ!",
-      tuesday: "Great work today! Go ahead and check out, champ.",
-      wednesday: "Nice job today — time to sign out, champ!",
-      thursday: "Well done today. You can sign out now, champ!",
-      friday: "You've completed your work for the day — feel free to check out.",
-      saturday: "You’ve pushed too hard — have some rest now.",
-    };
-    return messages[day] || "Have a great day!";
-  };
-
-  const sendMotivationalNotification = async () => {
-    const message = getWeeklySignOutMessage();
-
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted.');
-      return;
-    }
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Disconnected from Server',
-        body: message,
-        sound: 'default',
-      },
-      trigger: null, // Show immediately
-    });
   };
 
   const fetchLast7Days = async (tokenOverride?: string) => {
@@ -168,10 +105,7 @@ export default function AuthAttendanceScreen() {
       if (extractedName) setUserName(extractedName);
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
-      await sendMotivationalNotification();
       setAttendance([]);
-
-
     } finally {
       setLoading(false);
     }
@@ -262,12 +196,13 @@ export default function AuthAttendanceScreen() {
   };
 
   const formatHoursAndMinutes = (decimalHours: number): string => {
-    const totalMinutes = Math.round(decimalHours * 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours > 0 ? `${hours} hr${hours > 1 ? 's' : ''}` : ''}${minutes > 0 ? ` ${minutes} min${minutes > 1 ? 's' : ''}` : ''
-      }`.trim();
-  };
+  const totalMinutes = Math.round(decimalHours * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours > 0 ? `${hours} hr${hours > 1 ? 's' : ''}` : ''}${
+    minutes > 0 ? ` ${minutes} min${minutes > 1 ? 's' : ''}` : ''
+  }`.trim();
+};
 
 
   return (
@@ -333,7 +268,7 @@ export default function AuthAttendanceScreen() {
                     <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
                       Time Worked Today:{' '}
                       <Text style={{ fontWeight: 'bold' }}>
-                        {formatHoursAndMinutes(todaysRecord.timeWorked!)}
+                     {formatHoursAndMinutes(todaysRecord.timeWorked!)}
                       </Text>
                     </Text>
                   </View>
@@ -396,7 +331,7 @@ export default function AuthAttendanceScreen() {
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Time Worked</Text>
                       <Text style={styles.weekLargeColumnValue}>
-                        {record.timeWorked ? formatHoursAndMinutes(record.timeWorked) : '--'}
+                    {record.timeWorked ? formatHoursAndMinutes(record.timeWorked) : '--'}
                       </Text>
                     </View>
                   </View>
@@ -433,9 +368,9 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  welcome: {
+    welcome: {
     fontSize: 26,
-    fontWeight: 'bold',
+        fontWeight: 'bold',
     marginBottom: 10,
     textAlign: 'center',
   },
