@@ -529,37 +529,80 @@ mongoose.connect(process.env.MONGO_URI)
       console.log(`🚀 Server is running at http://localhost:${PORT}`);
     });
     // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In
+    // cron.schedule('5 0 * * *', async () => {
+    //   try {
+    //     const today = new Date();
+    //     today.setHours(0, 0, 0, 0); // Normalize to start of day
+
+    //     const allUsers = await User.find();
+
+    //     for (const user of allUsers) {
+    //       const alreadyMarked = await Attendance.findOne({
+    //         userId: user._id,
+    //         date: today
+    //       });
+
+    //       if (!alreadyMarked) {
+    //         await Attendance.create({
+    //           userId: user._id,
+    //           date: today,
+    //           signedInAt: null,
+    //           signedOutAt: null,
+    //           timeWorked: 0
+    //         });
+
+    //         console.log(`📌 Marked absent: ${user.name}`);
+    //       }
+    //     }
+
+    //     console.log('✅ Daily absence check completed.');
+    //   } catch (err) {
+    //     console.error('❌ Error in daily absence cron:', err.message);
+    //   }
+    // });
+
     cron.schedule('5 0 * * *', async () => {
       try {
         const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to start of day
+        today.setHours(0, 0, 0, 0); // normalize to midnight
 
         const allUsers = await User.find();
 
         for (const user of allUsers) {
-          const alreadyMarked = await Attendance.findOne({
-            userId: user._id,
-            date: today
-          });
+          const startDate = new Date(user.createdAt);
+          startDate.setHours(0, 0, 0, 0);
 
-          if (!alreadyMarked) {
-            await Attendance.create({
+          const currentDate = new Date(startDate);
+
+          while (currentDate <= today) {
+            const alreadyMarked = await Attendance.findOne({
               userId: user._id,
-              date: today,
-              signedInAt: null,
-              signedOutAt: null,
-              timeWorked: 0
+              date: currentDate
             });
 
-            console.log(`📌 Marked absent: ${user.name}`);
+            if (!alreadyMarked) {
+              await Attendance.create({
+                userId: user._id,
+                date: new Date(currentDate),
+                signedInAt: null,
+                signedOutAt: null,
+                timeWorked: 0
+              });
+
+              console.log(`📌 Absent marked for ${user.name} on ${currentDate.toDateString()}`);
+            }
+
+            // Move to next day
+            currentDate.setDate(currentDate.getDate() + 1);
           }
         }
 
-        console.log('✅ Daily absence check completed.');
+        console.log('✅ Absence check complete for all missing days.');
       } catch (err) {
-        console.error('❌ Error in daily absence cron:', err.message);
+        console.error('❌ Error in absence marking cron:', err.message);
       }
     });
+
 
   })
   .catch(err => {
