@@ -81,7 +81,7 @@
 
 
 
-
+import { DrawerToggleButton } from '@react-navigation/drawer';
 import React, { useState } from 'react';
 import { Drawer } from 'expo-router/drawer';
 import {
@@ -253,7 +253,11 @@ export default function DrawerLayout() {
   }
 
   return (
-    <Drawer>
+    <Drawer screenOptions={{
+      headerLeft: () => <DrawerToggleButton />,
+      headerTitle: '',
+    }}
+    >
       <Drawer.Screen name="index" options={{ drawerLabel: '🏠 Home' }} />
       <Drawer.Screen name="records" options={{ drawerLabel: '📅 Attendance History' }} />
       <Drawer.Screen name="logout" options={{ drawerLabel: '🚪 Logout' }} />
