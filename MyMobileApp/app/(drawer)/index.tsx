@@ -46,6 +46,7 @@ type AttendanceRecord = {
 export default function AuthAttendanceScreen() {
   const { token, isAuthReady, isLoggedIn } = useAuth();
   const [userName, setUserName] = useState('');
+  const [user, setUser] = useState<{ userId: string; name: string; email: string } | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
@@ -96,13 +97,17 @@ export default function AuthAttendanceScreen() {
     registerForPushNotifications();
   }, []);
 
-  const extractNameFromToken = (jwt: string): string => {
+  const extractUserFromToken = (jwt: string): { userId: string; name: string; email: string } | null => {
     try {
       const payload = jwt.split('.')[1];
       const decoded = JSON.parse(atob(payload));
-      return decoded.name || decoded.email || '';
-    } catch {
-      return '';
+      return {
+        userId: decoded.userId,
+        name: decoded.name,
+        email: decoded.email,
+      };
+    } catch (err) {
+      return null;
     }
   };
 
@@ -175,8 +180,11 @@ export default function AuthAttendanceScreen() {
 
       setAttendance(filtered);
 
-      const extractedName = extractNameFromToken(activeToken);
-      if (extractedName) setUserName(extractedName);
+      const decodedUser = extractUserFromToken(activeToken);
+      if (decodedUser) {
+        setUser(decodedUser);
+        setUserName(decodedUser.name);
+      }
 
     } catch (error) {
       console.error('Failed to fetch attendance:', error);

@@ -330,40 +330,18 @@ function authMiddleware(req, res, next) {
   if (!authHeader) return res.sendStatus(401);
 
   const token = authHeader.split(' ')[1];
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.sendStatus(403);
-    req.user = user;
+
+    req.user = {
+      id: decoded.userId,
+      name: decoded.name,
+      email: decoded.email
+    };
+
     next();
   });
 }
-
-// app.post('/register', async (req, res) => {
-//   try {
-//     const { name, email, password, role } = req.body;
-//     if (!email || !password || !name) {
-//       return res.status(400).json({ message: 'All fields required' });
-//     }
-
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(409).json({ message: 'Email already in use' });
-//     }
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const user = await User.create({
-//       name,
-//       email,
-//       password,             // plain text (for admin panel UI only)
-//       passwordHashed: hashedPassword,
-//       role: role || 'staff' // ✅ Default to 'staff' if not provided
-//     });
-
-//     res.status(201).json({ message: 'User registered', userId: user._id });
-//   } catch (err) {
-//     console.error('Registration error:', err);
-//     res.status(500).json({ error: 'Registration failed' });
-//   }
-// });
 
 app.post('/login', async (req, res) => {
   try {
@@ -381,35 +359,15 @@ app.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
       },
-      'jwt-secret-key',
+      process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-
 
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
   } catch (err) {
     res.status(500).json({ message: 'Login failed. Try again.' });
   }
 });
-
-// app.post('/attendance', authMiddleware, async (req, res) => {
-//   const userId = req.user.id;
-
-//   const alreadyMarked = await Attendance.findOne({
-//     userId,
-//     date: {
-//       $gte: new Date().setHours(0, 0, 0, 0),
-//       $lte: new Date().setHours(23, 59, 59, 999),
-//     },
-//   });
-
-//   if (alreadyMarked) {
-//     return res.status(400).json({ message: 'Already marked today' });
-//   }
-
-//   const attendance = await Attendance.create({ userId });
-//   res.status(201).json(attendance);
-// });
 
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
   const userId = req.user.id;

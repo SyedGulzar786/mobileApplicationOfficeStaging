@@ -41,20 +41,25 @@ export default function AttendanceRecordsScreen() {
 
       const sorted = data
         .filter((r: any) => r.userId)
-        .map((r: any) => ({
-          _id: r._id,
-          date: new Date(r.date).toLocaleDateString(),
-          signedInAt: r.signedInAt
-            ? new Date(r.signedInAt).toLocaleTimeString()
-            : 'Not Signed In',
-          signedOutAt: r.signedOutAt
-            ? new Date(r.signedOutAt).toLocaleTimeString()
-            : r.signedInAt
-            ? new Date(r.signedInAt).toDateString() === new Date().toDateString()
-              ? 'Not Signed Out'
-              : 'Forgot to Sign Out'
-            : 'Absent',
-        }));
+        .map((r: any) => {
+          const date = new Date(r.date);
+          const signedInAt = r.signedInAt ? new Date(r.signedInAt).toLocaleTimeString() : 'Not Signed In';
+          let signedOutAt = 'Absent';
+
+          if (r.signedInAt && r.signedOutAt) {
+            signedOutAt = new Date(r.signedOutAt).toLocaleTimeString();
+          } else if (r.signedInAt && !r.signedOutAt) {
+            const isToday = new Date(r.signedInAt).toDateString() === new Date().toDateString();
+            signedOutAt = isToday ? 'Not Signed Out' : 'Forgot to Sign Out';
+          }
+
+          return {
+            _id: r._id,
+            date: date.toDateString(), // Shows like "Mon Jul 28 2025"
+            signedInAt,
+            signedOutAt,
+          };
+        });
 
       setRecords(sorted.reverse());
     } catch (err: any) {
