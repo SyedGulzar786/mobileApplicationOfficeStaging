@@ -8,45 +8,94 @@ yarn-error.log*
 package-lock.json
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 dist/
 build/
-logs
+logs/
 *.log
 
 # MongoDB local data (if any)
 dump/
 data/
 
+# PM2 logs
+pids/
+*.pid
+*.seed
+
+# Coverage reports
+coverage/
+
 # -------------------------------
 # React Native / Expo (Frontend)
 # -------------------------------
+# Node modules
+MyMobileApp/node_modules/
+
+# Expo
 .expo/
 .expo-shared/
-*.tsbuildinfo
-*.log
 web-build/
+
+# Android/iOS (for bare workflow or EAS builds)
 android/
 ios/
+*.apk
+*.aab
 
-# Metro / Watchman
-.cache/
-babel.config.js
+# TypeScript
+*.tsbuildinfo
 
-# React Native build artifacts
+# Build output
 *.gradle
 *.iml
 *.hprof
 *.lock
 
-# OS-generated
+# Metro / Watchman / Cache
+.cache/
+babel.config.js
+watchman.config.js
+
+# EAS Build
+*.tar.gz
+*.gz
+*.zip
+
+# -------------------------------
+# OS / Editor / Temp files
+# -------------------------------
 .DS_Store
 Thumbs.db
 Desktop.ini
+*.swp
+*.swo
+*.tmp
+*.bak
 
 # VSCode
 .vscode/
+.history/
 
-# Temporary files
-*.tmp
-*.swp
-*.swo
+# JetBrains IDEs
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Logs or temp files
+*.tgz
+*.log
+*.orig
+
+# -------------------------------
+# Git / GitHub
+# -------------------------------
+.git/
+*.patch
+*.diff
+
+# Optional: Lock files if you don’t want to track them
+# yarn.lock
+# package-lock.json
