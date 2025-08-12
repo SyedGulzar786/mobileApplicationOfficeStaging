@@ -36,6 +36,11 @@ export default function DrawerLayout() {
 
   const login = async () => {
     try {
+      console.log('------------------------------------');
+      console.log(`[LOGIN] Started login process at ${new Date().toISOString()}`);
+      console.log('[LOGIN] Request payload:', { email, passwordHidden: password ? '***' : '(empty)' });
+      console.log(`[LOGIN] API Endpoint: ${API_BASE_URL}/login`);
+
       const res = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,27 +48,36 @@ export default function DrawerLayout() {
       });
 
       const text = await res.text();
+      console.log('[LOGIN] Raw server response text:', text);
+
       let data;
       try {
         data = JSON.parse(text);
       } catch {
+        console.log('[LOGIN] Failed to parse JSON response');
         Alert.alert('Error', 'Unexpected server response');
         return;
       }
 
+      console.log('[LOGIN] Parsed server response JSON:', data);
+
       if (!res.ok) {
+        console.log('[LOGIN] Result: Login failed', data.message || 'Check credentials');
         Alert.alert('Login Failed', data.message || 'Check credentials');
         return;
       }
 
       await authLogin(data.token); // ✅ Call context login
       const decoded = jwtDecode<{ userId: string, name: string, email: string }>(data.token);
-      console.log('Logged in user:', decoded);
+      console.log('[LOGIN] Decoded JWT:', decoded);
+      console.log('------------------------------------');
 
-    } catch {
+    } catch (error) {
+      console.error('[LOGIN] Exception during login:', error);
       Alert.alert('Error', 'Login failed');
     }
   };
+
 
   const resetPassword = async () => {
     if (!resetEmail || !newResetPassword || !resetName) {

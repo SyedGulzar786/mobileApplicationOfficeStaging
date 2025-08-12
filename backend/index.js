@@ -18,16 +18,23 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+
 // app.use(cors({
 //   origin: "*"
 //   // origin: 'http://localhost:8081', // your frontend origin
 //   // credentials: true,              // allow cookies & headers
 // }));
 
+// app.use(cors({
+//   origin: ["*", 'http://localhost:8081', 'http://192.168.100.174:8081'], // allowed frontend origins
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   credentials: true // allow cookies/headers
+// }));
+
 app.use(cors({
-  origin: ['http://localhost:8081', 'http://192.168.100.174:8081'], // allowed frontend origins
+  origin: "*",
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true // allow cookies/headers
+  credentials: true
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -60,28 +67,6 @@ app.get('/', (req, res) => res.redirect('/admin/login'));
 app.get('/admin/login', (req, res) => {
   res.render('login', { title: 'Admin Login', error: null });
 });
-
-// app.post('/admin/login', async (req, res) => {
-//   const { email, password } = req.body;
-//   if (email !== process.env.ADMIN_EMAIL) {
-//     return res.render('login', { title: 'Admin Login', error: 'Access Denied: Not Admin' });
-//   }
-
-//   const match = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
-//   if (!match) return res.render('login', { error: 'Invalid credentials' });
-
-//   const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1d' });
-//   // res.cookie('token', token, { httpOnly: true }); --> // ✅ Set cookie for admin session
-//   res.cookie('token', token, {                    // --> // ✅ Set cookie for admin session
-//     httpOnly: true,
-//     sameSite: 'lax', // not 'strict' (might block in cross-origin)
-//     secure: false,   // only true on https!
-//     secure: process.env.NODE_ENV === 'production',
-
-//   });
-
-//   res.redirect('/dashboard');
-// });
 
 app.post('/admin/login', async (req, res) => {
   const { email, password } = req.body;
@@ -352,14 +337,33 @@ function authMiddleware(req, res, next) {
 
 app.post('/login', async (req, res) => {
   try {
+    // Log request IP & body
+    console.log('------------------------------------');
+    console.log(`[LOGIN] New login attempt at ${new Date().toISOString()}`);
+    console.log(`[LOGIN] Request IP: ${req.ip} (x-forwarded-for: ${req.headers['x-forwarded-for'] || 'N/A'})`);
+    console.log('[LOGIN] Request body:', req.body);
+
     const { email, password } = req.body;
+
+    // Check if user exists
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ message: 'Invalid email' });
+    console.log('[LOGIN] User lookup result:', user ? `Found user: ${user.name}` : 'No user found');
 
-    // const isMatch = await bcrypt.compare(password, user.password);
+    if (!user) {
+      console.log('[LOGIN] Result: Invalid email');
+      return res.status(401).json({ message: 'Invalid email' });
+    }
+
+    // Compare password
     const isMatch = await bcrypt.compare(password, user.passwordHashed);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid password' });
+    console.log(`[LOGIN] Password match: ${isMatch}`);
 
+    if (!isMatch) {
+      console.log('[LOGIN] Result: Invalid password');
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    // Generate JWT token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -370,8 +374,18 @@ app.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    const responsePayload = { 
+      token, 
+      user: { id: user._id, name: user.name, email: user.email } 
+    };
+
+    console.log('[LOGIN] Login successful. Response payload:', responsePayload);
+    console.log('------------------------------------');
+
+    res.json(responsePayload);
+
   } catch (err) {
+    console.error('[LOGIN] Error during login:', err.message);
     res.status(500).json({ message: 'Login failed. Try again.' });
   }
 });
