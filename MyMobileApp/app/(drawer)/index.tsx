@@ -16,6 +16,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
+import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
+console.log("📱 index.tsx loaded");
 
 // Set notification behavior globally
 Notifications.setNotificationHandler({
@@ -28,7 +30,9 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const API = 'http://192.168.100.174:5000';
+// const API = 'http://192.168.100.174:5000';
+const API = API_BASE_URL;
+
 
 type AttendanceRecord = {
   _id: string;
@@ -164,6 +168,9 @@ export default function AuthAttendanceScreen() {
         },
       });
 
+      console.log('📡 Fetching attendance from:', `${API}/attendance/week`);
+      console.log('📥 Weekly attendance response status:', res.status);
+
       const data = await res.json();
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
@@ -203,6 +210,8 @@ export default function AuthAttendanceScreen() {
   };
 
   const handleSignIn = async () => {
+    console.log('🔼 Sending Sign In request...');
+
     try {
       const res = await fetch(`${API}/attendance/signin`, {
         method: 'POST',
@@ -210,26 +219,32 @@ export default function AuthAttendanceScreen() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        credentials: 'include', // ✅ <-- ADD THIS LINE
+        credentials: 'include',
       });
 
+      console.log('📥 Sign In response status:', res.status);
       const data = await res.json();
+      console.log('📥 Sign In response body:', data);
+
       if (!res.ok) {
         Alert.alert('Sign In Failed', data.message || 'Already signed in today');
         return;
       }
 
       Alert.alert('Success', data.message || 'Signed in');
-      await AsyncStorage.setItem('signedInStatus', 'true'); // ✅ Local sign-in flag
+      await AsyncStorage.setItem('signedInStatus', 'true');
       fetchLast7Days();
-      setElapsedSeconds(0);     // ⏱️ Reset timer
-      setIsTimerRunning(true);  // ⏱️ Start timer
-    } catch {
-      Alert.alert('Error', 'Something went wrong');
+      setElapsedSeconds(0);
+      setIsTimerRunning(true);
+    } catch (err) {
+      console.error('❌ Sign In error:', err);
+      Alert.alert('Error', 'Something went wrong during Sign In');
     }
   };
 
   const handleSignOut = async () => {
+    console.log('🔼 Sending Sign Out request...');
+
     try {
       const res = await fetch(`${API}/attendance/signout`, {
         method: 'POST',
@@ -237,22 +252,25 @@ export default function AuthAttendanceScreen() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        credentials: 'include', // ✅ <-- ADD THIS LINE
+        credentials: 'include',
       });
 
+      console.log('📥 Sign Out response status:', res.status);
       const data = await res.json();
+      console.log('📥 Sign Out response body:', data);
+
       if (!res.ok) {
         Alert.alert('Sign Out Failed', data.message || 'Already signed out or not signed in yet');
         return;
       }
 
       Alert.alert('Success', data.message || 'Signed out');
-      await AsyncStorage.setItem('signedInStatus', 'false'); // ✅ Local sign-out flag
+      await AsyncStorage.setItem('signedInStatus', 'false');
       fetchLast7Days();
-      setIsTimerRunning(false); // ⏱️ Stop timer
-      // setElapsedSeconds(0);     // ❌ Remove this line for now ← 🛑 Do NOT reset yet (we'll show it first)
-    } catch {
-      Alert.alert('Error', 'Something went wrong');
+      setIsTimerRunning(false);
+    } catch (err) {
+      console.error('❌ Sign Out error:', err);
+      Alert.alert('Error', 'Something went wrong during Sign Out');
     }
   };
 

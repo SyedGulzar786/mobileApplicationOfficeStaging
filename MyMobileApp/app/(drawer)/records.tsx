@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
 import {
   View,
   Text,
@@ -9,7 +10,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API = 'http://192.168.100.174:5000';
+// const API = 'http://192.168.100.174:5000';
+const API = API_BASE_URL;
+
 
 type AttendanceRecord = {
   _id: string;

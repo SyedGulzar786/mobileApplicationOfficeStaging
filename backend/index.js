@@ -19,8 +19,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: 'http://localhost:8081', // your frontend origin
-  credentials: true,              // allow cookies & headers
+  origin: "*"
+  // origin: 'http://localhost:8081', // your frontend origin
+  // credentials: true,              // allow cookies & headers
 }));
 
 app.use(express.urlencoded({ extended: true }));
@@ -492,7 +493,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running at http://localhost:${PORT}`);
     });
     // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In
