@@ -18,10 +18,16 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+// app.use(cors({
+//   origin: "*"
+//   // origin: 'http://localhost:8081', // your frontend origin
+//   // credentials: true,              // allow cookies & headers
+// }));
+
 app.use(cors({
-  origin: "*"
-  // origin: 'http://localhost:8081', // your frontend origin
-  // credentials: true,              // allow cookies & headers
+  origin: ['http://localhost:8081', 'http://192.168.100.174:8081'], // allowed frontend origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true // allow cookies/headers
 }));
 
 app.use(express.urlencoded({ extended: true }));

@@ -14,8 +14,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext'; // ✅ Update path if needed
+import { API_BASE_URL } from '@/constants/env';
 
-const API = 'http://192.168.100.174:5000';
+// const API = 'http://192.168.100.174:5000';
 
 export default function DrawerLayout() {
   const {
@@ -35,7 +36,7 @@ export default function DrawerLayout() {
 
   const login = async () => {
     try {
-      const res = await fetch(`${API}/login`, {
+      const res = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -75,7 +76,7 @@ export default function DrawerLayout() {
     }
 
     try {
-      const res = await fetch(`${API}/reset-password`, {
+      const res = await fetch(`${API_BASE_URL}/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
