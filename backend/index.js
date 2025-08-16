@@ -25,17 +25,35 @@ app.use(express.json());
 //   // credentials: true,              // allow cookies & headers
 // }));
 
+app.use(cors({
+  origin: ["*", 'http://localhost:8081', 'http://192.168.100.174:8081'], // allowed frontend origins
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true // allow cookies/headers
+}));
+
 // app.use(cors({
-//   origin: ["*", 'http://localhost:8081', 'http://192.168.100.174:8081'], // allowed frontend origins
+//     origin: ['http://localhost:19006', 'exp://192.168.100.175:19000'],
+//   // origin: "*",
+//     // origin: ['http://localhost:8081', 'http://192.168.100.175:8081'], // allowed frontend origins
 //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   credentials: true // allow cookies/headers
+//   credentials: true
 // }));
 
-app.use(cors({
-  origin: "*",
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true
-}));
+// app.use(cors({
+//   origin: [
+//     'exp://192.168.100.174:19000', // Expo LAN URL (adjust IP if different)
+//     'http://192.168.100.174:19006', // Expo web (optional)
+//     'http://192.168.100.174:5000'   // Backend API URL (mobile fetch requests)
+//   ],
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   credentials: true
+// }));
+
+// app.use(cors({
+//   origin: "*",
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   credentials: true
+// }));
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
