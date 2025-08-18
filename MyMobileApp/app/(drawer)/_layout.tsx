@@ -202,12 +202,12 @@ export default function DrawerLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flexGrow: 1, alignItems: 'center' },
+  container: { padding: 20, flexGrow: 1, display:"flex", justifyContent:"center", alignItems: 'center' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
-    width: '100%',
+    width: "100%",
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
