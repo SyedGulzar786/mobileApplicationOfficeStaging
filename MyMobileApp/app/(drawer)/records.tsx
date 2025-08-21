@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
+import { API_BASE_URL } from '../../constants/env';
 import {
   View,
   Text,
@@ -10,9 +10,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// const API = 'http://192.168.100.174:5000';
 const API = API_BASE_URL;
-
 
 type AttendanceRecord = {
   _id: string;
@@ -33,7 +31,7 @@ export default function AttendanceRecordsScreen() {
         return;
       }
 
-      const res = await fetch(`${API}/attendance`, {
+      const res = await fetch(`${API}/attendance/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -42,29 +40,31 @@ export default function AttendanceRecordsScreen() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Error fetching records');
 
-      const sorted = data
-        .filter((r: any) => r.userId)
-        .map((r: any) => {
-          const date = new Date(r.date);
-          const signedInAt = r.signedInAt ? new Date(r.signedInAt).toLocaleTimeString() : 'Not Signed In';
-          let signedOutAt = 'Absent';
+      const sorted = data.map((r: any) => {
+        const date = new Date(r.date);
+        const signedInAt = r.signedInAt
+          ? new Date(r.signedInAt).toLocaleTimeString()
+          : 'Not Signed In';
 
-          if (r.signedInAt && r.signedOutAt) {
-            signedOutAt = new Date(r.signedOutAt).toLocaleTimeString();
-          } else if (r.signedInAt && !r.signedOutAt) {
-            const isToday = new Date(r.signedInAt).toDateString() === new Date().toDateString();
-            signedOutAt = isToday ? 'Not Signed Out' : 'Forgot to Sign Out';
-          }
+        let signedOutAt = 'Absent';
+        if (r.signedInAt && r.signedOutAt) {
+          signedOutAt = new Date(r.signedOutAt).toLocaleTimeString();
+        } else if (r.signedInAt && !r.signedOutAt) {
+          const isToday =
+            new Date(r.signedInAt).toDateString() ===
+            new Date().toDateString();
+          signedOutAt = isToday ? 'Not Signed Out' : 'Forgot to Sign Out';
+        }
 
-          return {
-            _id: r._id,
-            date: date.toDateString(), // Shows like "Mon Jul 28 2025"
-            signedInAt,
-            signedOutAt,
-          };
-        });
+        return {
+          _id: r._id,
+          date: date.toDateString(),
+          signedInAt,
+          signedOutAt,
+        };
+      });
 
-      setRecords(sorted.reverse());
+      setRecords(sorted);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to fetch records');
     } finally {

@@ -507,6 +507,18 @@ app.get('/attendance', async (req, res) => {
   }
 });
 
+// ✅ User-specific attendance history
+app.get('/attendance/me', authMiddleware, async (req, res) => {
+  try {
+    const records = await Attendance.find({ userId: req.user.id })
+      .sort({ date: -1 }); // latest first
+    res.json(records);
+  } catch (err) {
+    console.error('Error fetching user attendance:', err.message);
+    res.status(500).json({ error: 'Failed to fetch attendance' });
+  }
+});
+
 // ✅ Weekly attendance for the logged-in user
 app.get('/attendance/week', authMiddleware, async (req, res) => {
   try {
