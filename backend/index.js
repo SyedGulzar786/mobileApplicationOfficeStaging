@@ -507,17 +507,19 @@ app.get('/attendance', async (req, res) => {
   }
 });
 
-app.get('/attendance/week', async (req, res) => {
+// ✅ Weekly attendance for the logged-in user
+app.get('/attendance/week', authMiddleware, async (req, res) => {
   try {
-
-    const weekStarts = startOfWeek(new Date(), { weekStartsOn: 1 })
+    const weekStarts = startOfWeek(new Date(), { weekStartsOn: 1 });
 
     const records = await Attendance.find({
+      userId: req.user.id, // ✅ filter by logged-in user
       date: { $gte: weekStarts },
     }).populate('userId');
 
     res.json(records);
   } catch (err) {
+    console.error('Error fetching weekly attendance:', err.message);
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
 });
