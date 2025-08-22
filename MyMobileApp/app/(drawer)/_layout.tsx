@@ -168,21 +168,26 @@ export default function DrawerLayout() {
             </>
           )}
 
-          {isReset ? (
-            <>
-              <Button title="Reset Password" onPress={resetPassword} />
-              <Text style={styles.linkText} onPress={() => setIsReset(false)}>
-                Back to Login
-              </Text>
-            </>
-          ) : (
-            <>
-              <Button title="Login" onPress={login} />
-              <Text style={styles.linkText} onPress={() => setIsReset(true)}>
-                Forgot Password?
-              </Text>
-            </>
-          )}
+{isReset ? (
+  <>
+    <TouchableOpacity style={styles.loginButton} onPress={resetPassword}>
+      <Text style={styles.buttonText}>Reset Password</Text>
+    </TouchableOpacity>
+    <Text style={styles.linkText} onPress={() => setIsReset(false)}>
+      Back to Login
+    </Text>
+  </>
+) : (
+  <>
+    <TouchableOpacity style={styles.loginButton} onPress={login}>
+      <Text style={styles.buttonText}>Login</Text>
+    </TouchableOpacity>
+    <Text style={styles.linkText} onPress={() => setIsReset(true)}>
+      Forgot Password?
+    </Text>
+  </>
+)}
+
         </View>
       </ScrollView>
     );
@@ -202,17 +207,19 @@ export default function DrawerLayout() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, flexGrow: 1, display:"flex", justifyContent:"center", alignItems: 'center' },
+  container: {backgroundColor: '#fff', padding: 20, flexGrow: 1, display:"flex", justifyContent:"center", alignItems: 'center' },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
+    display: 'flex',
+    gap: 20,
     width: "100%",
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.4,
     shadowRadius: 5,
-    elevation: 5,
+    elevation:  15,
   },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
   input: {
@@ -237,5 +244,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginRight: 10,
   },
-  linkText: { color: 'blue', marginTop: 10, textAlign: 'center' },
+  loginButton:{
+    backgroundColor: 'rgb(79, 70, 229)',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+  },
+    buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  linkText: { color: 'rgb(79, 70, 229)', marginTop: 10, textAlign: 'center' },
 });
