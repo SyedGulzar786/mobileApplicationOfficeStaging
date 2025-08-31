@@ -408,71 +408,70 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// ✅ Sign In (always creates a new session)
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  try {
+    const userId = req.user.id;
+    const now = new Date();
 
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
+    // normalize date to midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const existing = await Attendance.findOne({
-    userId,
-    date: { $gte: start, $lte: end }
-  });
+    // Always create a new session (no duplicate check)
+    const attendance = new Attendance({
+      userId,
+      date: today,
+      signedInAt: now,
+    });
 
-  if (existing) {
-    if (existing.signedInAt) {
-      return res.status(400).json({ message: 'Already signed in today' });
-    } else {
-      existing.signedInAt = new Date(); // current time
-      await existing.save();
-      return res.status(200).json({ message: 'Sign in time recorded' });
-    }
+    await attendance.save();
+    return res.status(201).json({ message: 'Signed in successfully', attendance });
+  } catch (err) {
+    console.error('Signin error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // normalize
-
-  await Attendance.create({
-    userId,
-    date: today, // ✅ fixed
-    signedInAt: new Date()
-  });
-
-  return res.status(201).json({ message: 'Signed in successfully' });
 });
 
+
+// ✅ Sign Out (close the latest open session for today)
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
-  const userId = req.user.id;
+  try {
+    const userId = req.user.id;
+    const now = new Date();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+    // normalize date to midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  const existing = await Attendance.findOne({
-    userId,
-    date: today
-  });
+    // Find the latest session for today that is still open
+    const attendance = await Attendance.findOne({
+      userId,
+      date: today,
+      signedOutAt: null,
+    }).sort({ signedInAt: -1 }); // get the latest open session
 
-  if (!existing || !existing.signedInAt) {
-    return res.status(400).json({ message: 'You must sign in first before signing out' });
+    if (!attendance) {
+      return res.status(400).json({ message: 'No active session to sign out' });
+    }
+
+    attendance.signedOutAt = now;
+
+    // calculate worked hours
+    if (attendance.signedInAt) {
+      const diffMs = now - attendance.signedInAt;
+      attendance.timeWorked = diffMs / (1000 * 60 * 60); // hours
+    }
+
+    await attendance.save();
+
+    return res.status(200).json({ message: 'Signed out successfully', attendance });
+  } catch (err) {
+    console.error('Signout error:', err);
+    return res.status(500).json({ message: 'Server error' });
   }
-
-  if (existing.signedOutAt) {
-    return res.status(400).json({ message: 'Already signed out today' });
-  }
-
-  const signOutTime = new Date();
-  const durationMs = signOutTime - existing.signedInAt;
-  const durationHours = durationMs / (1000 * 60 * 60); // convert ms → hours
-
-  existing.signedOutAt = signOutTime;
-  existing.timeWorked = durationHours;
-
-  await existing.save();
-
-  return res.status(200).json({ message: 'Signed out and time worked recorded' });
 });
+
 
 app.get('/today', async (req, res) => {
   try {
