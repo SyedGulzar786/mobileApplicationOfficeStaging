@@ -58,6 +58,17 @@ export default function AuthAttendanceScreen() {
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
 
 
+
+  // Track expanded/collapsed state of each day
+  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+
+  const toggleDayExpansion = (dateKey: string) => {
+    setExpandedDays((prev) => ({
+      ...prev,
+      [dateKey]: !prev[dateKey],
+    }));
+  };
+
   // Group attendance records by local date string (e.g. "Mon - 01 Sep, 2025")
   const groupAttendanceByDate = (records: AttendanceRecord[]) => {
     const map = new Map<string, AttendanceRecord[]>();
@@ -444,12 +455,50 @@ export default function AuthAttendanceScreen() {
           <View style={styles.tableContainer}>
             {groupAttendanceByDate(attendance).map(({ dateKey, date, sessions }) => {
               const formattedDate = format(date, 'EEE - dd MMM, yyyy');
-              // total day duration could be calculated if desired; here we just show sessions
+              const expanded = expandedDays[dateKey];
+              const latest = sessions[0];
+              const rest = sessions.slice(1);
+
+              const renderRow = (rec: AttendanceRecord) => {
+                const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
+                const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
+                const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
+                return (
+                  <View
+                    key={rec._id}
+                    style={[
+                      styles.recordRow,
+                      { backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
+                    ]}
+                  >
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
+                    </View>
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
+                    </View>
+                    <View style={styles.largeColumn}>
+                      <Text style={styles.weekLargeColumnValue}>{duration}</Text>
+                    </View>
+                  </View>
+                );
+              };
+
               return (
                 <View key={dateKey} style={styles.recordBlock}>
-                  <Text style={styles.recordDate}>{formattedDate}</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text></Text>
+                    <Text style={styles.recordDate}>{formattedDate}</Text>
+                    {sessions.length > 1 && (
+                      <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9' }}>
+                          {expanded ? '✕' : '⋮'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
 
-                  {/* header row for columns (Signed In / Signed Out / Time Worked) */}
+                  {/* header row */}
                   <View style={[styles.largeRecordRow, { marginBottom: 8, paddingVertical: 8 }]}>
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Signed In</Text>
@@ -462,32 +511,11 @@ export default function AuthAttendanceScreen() {
                     </View>
                   </View>
 
-                  {/* session rows */}
-                  {sessions.map((rec) => {
-                    const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
-                    const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
-                    const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
+                  {/* always show latest */}
+                  {latest && renderRow(latest)}
 
-                    return (
-                      <View
-                        key={rec._id}
-                        style={[
-                          styles.recordRow,
-                          { backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
-                        ]}
-                      >
-                        <View style={styles.largeColumn}>
-                          <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
-                        </View>
-                        <View style={styles.largeColumn}>
-                          <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
-                        </View>
-                        <View style={styles.largeColumn}>
-                          <Text style={styles.weekLargeColumnValue}>{duration}</Text>
-                        </View>
-                      </View>
-                    );
-                  })}
+                  {/* show rest only if expanded */}
+                  {expanded && rest.map(renderRow)}
                 </View>
               );
             })}
