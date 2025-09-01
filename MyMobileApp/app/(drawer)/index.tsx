@@ -310,15 +310,6 @@ export default function AuthAttendanceScreen() {
     return format(now, 'EEE - dd MMM, yyyy');
   };
 
-  const formatHoursAndMinutes = (decimalHours: number): string => {
-    const totalMinutes = Math.round(decimalHours * 60);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours > 0 ? `${hours} hr${hours > 1 ? 's' : ''}` : ''}${minutes > 0 ? ` ${minutes} min${minutes > 1 ? 's' : ''}` : ''
-      }`.trim();
-  };
-
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -382,7 +373,7 @@ export default function AuthAttendanceScreen() {
                     <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
                       Time Worked Today:{' '}
                       <Text style={{ fontWeight: 'bold' }}>
-                        {formatHoursAndMinutes(todaysRecord.timeWorked!)}
+                        {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
                       </Text>
                     </Text>
                   </View>
@@ -394,17 +385,21 @@ export default function AuthAttendanceScreen() {
               {/* 🕒 TIMER DISPLAY */}
               {isTimerRunning && (
                 <View style={{ marginTop: 10 }}>
-                  {isTimerRunning ? (
-                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                      Time Since Sign In:{' '}
-                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-                    </Text>
-                  ) : elapsedSeconds > 0 ? (
-                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                      Total Time Worked:{' '}
-                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-                    </Text>
-                  ) : null}
+ {isTimerRunning ? (
+   <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+     Time Since Sign In:{' '}
+     <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+   </Text>
+ ) : todaysRecord ? (
+   <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+     Total Time Worked:{' '}
+     <Text style={{ fontWeight: 'bold' }}>
+       {todaysRecord.signedInAt
+         ? formatDuration(todaysRecord.signedInAt, todaysRecord.signedOutAt)
+         : "--"}
+     </Text>
+   </Text>
+ ) : null}
                 </View>
 
               )}
@@ -447,7 +442,9 @@ export default function AuthAttendanceScreen() {
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Time Worked</Text>
                       <Text style={styles.weekLargeColumnValue}>
-                        {record.timeWorked ? formatHoursAndMinutes(record.timeWorked) : '--'}
+                        {record.signedInAt
+                          ? formatDuration(record.signedInAt, record.signedOutAt)
+                          : '--'}
                       </Text>
                     </View>
                   </View>
