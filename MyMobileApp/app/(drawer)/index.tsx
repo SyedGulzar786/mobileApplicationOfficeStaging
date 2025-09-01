@@ -57,6 +57,31 @@ export default function AuthAttendanceScreen() {
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
 
+
+  // Group attendance records by local date string (e.g. "Mon - 01 Sep, 2025")
+  const groupAttendanceByDate = (records: AttendanceRecord[]) => {
+    const map = new Map<string, AttendanceRecord[]>();
+    records.forEach((rec) => {
+      const dateObj = new Date(rec.signedInAt || rec.signedOutAt || '');
+      const dateKey = dateObj.toDateString(); // groups by day (local)
+      if (!map.has(dateKey)) map.set(dateKey, []);
+      map.get(dateKey)!.push(rec);
+    });
+
+    // Convert to array and sort by date descending (most recent first)
+    const grouped = Array.from(map.entries()).map(([dateKey, sessions]) => {
+      const date = new Date(dateKey);
+      // sort sessions in descending order of signedIn/signedOut time
+      sessions.sort((a, b) =>
+        new Date(b.signedInAt || b.signedOutAt || '').getTime() -
+        new Date(a.signedInAt || a.signedOutAt || '').getTime()
+      );
+      return { dateKey, date, sessions };
+    });
+
+    grouped.sort((a, b) => b.date.getTime() - a.date.getTime());
+    return grouped;
+  };
   // ⏱️ Timer states
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -385,21 +410,21 @@ export default function AuthAttendanceScreen() {
               {/* 🕒 TIMER DISPLAY */}
               {isTimerRunning && (
                 <View style={{ marginTop: 10 }}>
- {isTimerRunning ? (
-   <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-     Time Since Sign In:{' '}
-     <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-   </Text>
- ) : todaysRecord ? (
-   <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-     Total Time Worked:{' '}
-     <Text style={{ fontWeight: 'bold' }}>
-       {todaysRecord.signedInAt
-         ? formatDuration(todaysRecord.signedInAt, todaysRecord.signedOutAt)
-         : "--"}
-     </Text>
-   </Text>
- ) : null}
+                  {isTimerRunning ? (
+                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                      Time Since Sign In:{' '}
+                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
+                    </Text>
+                  ) : todaysRecord ? (
+                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                      Total Time Worked:{' '}
+                      <Text style={{ fontWeight: 'bold' }}>
+                        {todaysRecord.signedInAt
+                          ? formatDuration(todaysRecord.signedInAt, todaysRecord.signedOutAt)
+                          : "--"}
+                      </Text>
+                    </Text>
+                  ) : null}
                 </View>
 
               )}
@@ -417,38 +442,52 @@ export default function AuthAttendanceScreen() {
           <Text>No records found.</Text>
         ) : (
           <View style={styles.tableContainer}>
-            {attendance.map((record) => {
-              const date = new Date(record.signedInAt || record.signedOutAt || '');
+            {groupAttendanceByDate(attendance).map(({ dateKey, date, sessions }) => {
               const formattedDate = format(date, 'EEE - dd MMM, yyyy');
-              const signedIn = record.signedInAt
-                ? new Date(record.signedInAt).toLocaleTimeString()
-                : '-';
-              const signedOut = record.signedOutAt
-                ? new Date(record.signedOutAt).toLocaleTimeString()
-                : '-';
-
+              // total day duration could be calculated if desired; here we just show sessions
               return (
-                <View key={record._id} style={styles.recordBlock}>
+                <View key={dateKey} style={styles.recordBlock}>
                   <Text style={styles.recordDate}>{formattedDate}</Text>
-                  <View style={styles.largeRecordRow}>
+
+                  {/* header row for columns (Signed In / Signed Out / Time Worked) */}
+                  <View style={[styles.largeRecordRow, { marginBottom: 8, paddingVertical: 8 }]}>
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Signed In</Text>
-                      <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
                     </View>
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Signed Out</Text>
-                      <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
                     </View>
                     <View style={styles.largeColumn}>
                       <Text style={styles.weekColumnTitle}>Time Worked</Text>
-                      <Text style={styles.weekLargeColumnValue}>
-                        {record.signedInAt
-                          ? formatDuration(record.signedInAt, record.signedOutAt)
-                          : '--'}
-                      </Text>
                     </View>
                   </View>
 
+                  {/* session rows */}
+                  {sessions.map((rec) => {
+                    const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
+                    const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
+                    const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
+
+                    return (
+                      <View
+                        key={rec._id}
+                        style={[
+                          styles.recordRow,
+                          { backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
+                        ]}
+                      >
+                        <View style={styles.largeColumn}>
+                          <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
+                        </View>
+                        <View style={styles.largeColumn}>
+                          <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
+                        </View>
+                        <View style={styles.largeColumn}>
+                          <Text style={styles.weekLargeColumnValue}>{duration}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
                 </View>
               );
             })}
