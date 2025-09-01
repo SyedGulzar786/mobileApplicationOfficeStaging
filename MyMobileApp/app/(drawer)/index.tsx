@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
+import { formatDuration } from '../../utils/formatDuration';
 console.log("📱 index.tsx loaded");
 
 // Set notification behavior globally
@@ -52,6 +53,7 @@ export default function AuthAttendanceScreen() {
   const [userName, setUserName] = useState('');
   const [user, setUser] = useState<{ userId: string; name: string; email: string } | null>(null);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [todaysRecords, setTodaysRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
 
@@ -409,6 +411,8 @@ export default function AuthAttendanceScreen() {
             </View>
           );
         })()}
+
+        {/* 📝 Today’s Log Section */}        <Text style={styles.subtitle}>Today&apos;s Log</Text>        {(() => { const today = new Date().toDateString(); const todaysRecords = attendance.filter((rec) => { const date = new Date(rec.signedInAt || rec.signedOutAt || "").toDateString(); return date === today; }); if (todaysRecords.length === 0) { return <Text style={styles.noToday}>No log entries for today.</Text>; } return (<View style={styles.tableContainer}>              {todaysRecords.map((rec) => { const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : "--"; const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : "--"; const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>); })}            </View>); })()}
 
         <Text style={styles.subtitle}>This Week's Attendance</Text>
 
