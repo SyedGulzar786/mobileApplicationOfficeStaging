@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "Mark Me",
-    "slug": "Mark Me",
+"name": "Mark Me",
+"slug": "mark-me",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mymobileapp",
+    "scheme": "markme",
+
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.syedgulzar786.MyMobileApp"
+"package": "com.syedgulzar786.markme"
+
     },
     "web": {
       "bundler": "metro",
