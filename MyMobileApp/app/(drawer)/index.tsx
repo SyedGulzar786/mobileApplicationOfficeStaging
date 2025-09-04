@@ -486,8 +486,8 @@ export default function AuthAttendanceScreen() {
 
               return (
                 <View key={dateKey} style={styles.recordBlock}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text></Text>
+                  <View style={sessions.length > 1 ? { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } : { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={sessions.length > 1 ? {display: "flex"} : {display: "none"}}></Text>
                     <Text style={styles.recordDate}>{formattedDate}</Text>
                     {sessions.length > 1 && (
                       <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
