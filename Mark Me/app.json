@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MyMobileApp",
-    "slug": "MyMobileApp",
+    "name": "Mark Me",
+    "slug": "Mark Me",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
