@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Alert,
   TouchableOpacity,
+  Modal,
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
@@ -56,6 +57,8 @@ export default function AuthAttendanceScreen() {
   const [todaysRecords, setTodaysRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [pendingSignIn, setPendingSignIn] = useState(false);
 
 
 
@@ -247,9 +250,8 @@ export default function AuthAttendanceScreen() {
     }
   };
 
-  const handleSignIn = async () => {
+  const performSignIn = async () => {
     console.log('🔼 Sending Sign In request...');
-
     try {
       const res = await fetch(`${API}/attendance/signin`, {
         method: 'POST',
@@ -259,7 +261,6 @@ export default function AuthAttendanceScreen() {
         },
         credentials: 'include',
       });
-
       console.log('📥 Sign In response status:', res.status);
       const data = await res.json();
       console.log('📥 Sign In response body:', data);
@@ -278,6 +279,29 @@ export default function AuthAttendanceScreen() {
       console.error('❌ Sign In error:', err);
       Alert.alert('Error', 'Something went wrong during Sign In');
     }
+  };
+
+  const handleSignIn = async () => {
+    const currentStatus = await AsyncStorage.getItem('signedInStatus');
+    if (currentStatus === 'true') {
+      // Session already active → show modal instead of signing in
+      setShowSessionModal(true);
+      setPendingSignIn(true);
+      return;
+    }
+    performSignIn();
+  };
+
+  const handleClosePreviousAndSignIn = async () => {
+    setShowSessionModal(false);
+    await handleSignOut();
+    performSignIn();
+    setPendingSignIn(false);
+  };
+
+  const handleKeepSession = () => {
+    setShowSessionModal(false);
+    setPendingSignIn(false);
   };
 
   const handleSignOut = async () => {
@@ -348,6 +372,38 @@ export default function AuthAttendanceScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+
+      {/* Session Conflict Modal */}
+      <Modal
+        visible={showSessionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSessionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Sorry</Text>
+            <Text style={styles.modalMessage}>
+              Do you want me to close the last session?
+            </Text>
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.signOut]}
+                onPress={handleClosePreviousAndSignIn}
+              >
+                <Text style={styles.buttonText}>Close Session</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.signIn]}
+                onPress={handleKeepSession}
+              >
+                <Text style={styles.buttonText}>Keep Session</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.card}>
         <View>
           <Text style={[styles.welcome]}>Welcome {userName}!</Text>
@@ -487,7 +543,7 @@ export default function AuthAttendanceScreen() {
               return (
                 <View key={dateKey} style={styles.recordBlock}>
                   <View style={sessions.length > 1 ? { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } : { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={sessions.length > 1 ? {display: "flex"} : {display: "none"}}></Text>
+                    <Text style={sessions.length > 1 ? { display: "flex" } : { display: "none" }}></Text>
                     <Text style={styles.recordDate}>{formattedDate}</Text>
                     {sessions.length > 1 && (
                       <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
@@ -707,7 +763,49 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     color: '#888',
   },
-
-
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 350,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#2c3e50',
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#555',
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
 
 });
