@@ -1,7 +1,11 @@
 <% title='Users' %>
 
   <h2>User Management</h2>
-
+  <!-- Delete All Users -->
+  <form method="POST" action="/admin/users/delete-all"
+    onsubmit="return confirm('⚠️ Are you sure you want to delete ALL users?')" class="mb-3">
+    <button type="submit" class="btn btn-danger">Delete All Users</button>
+  </form>
   <form method="POST" action="/admin/users" class="mb-3" onsubmit="return prepareWorkingHours(this)">
     <div class="row">
       <div class="col">

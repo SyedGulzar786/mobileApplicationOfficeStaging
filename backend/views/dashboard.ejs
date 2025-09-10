@@ -1,34 +1,42 @@
-<% title = 'Dashboard' %>
+<% title='Dashboard' %>
 
-<h2>User Management</h2>
-<input type="text" id="searchInput" placeholder="Search by name..." onkeyup="filterTable()">
-<table id="userTable">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Role</th>
-      <th>Working Hours</th> <!-- ✅ New column -->
-    </tr>
-  </thead>
-  <tbody>
-    <% users.forEach(user => { %>
+  <h2>User Management</h2>
+  <input type="text" id="searchInput" placeholder="Search by name..." onkeyup="filterTable()">
+  <table id="userTable">
+    <thead>
       <tr>
-        <td><%= user.name %></td>
-        <td><%= user.email %></td>
-        <td><%= user.role || 'User' %></td>
-        <td><%= user.workingHours || 9 %> hrs</td> <!-- ✅ Display working hours -->
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Working Hours</th> <!-- ✅ New column -->
       </tr>
-    <% }) %>
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      <% users.forEach(user=> { %>
+        <tr onclick="window.location='/admin/users/<%= user._id %>/attendance'" style="cursor: pointer;">
+          <td>
+            <%= user.name %>
+          </td>
+          <td>
+            <%= user.email %>
+          </td>
+          <td>
+            <%= user.role || 'User' %>
+          </td>
+          <td>
+            <%= user.workingHours || 9 %> hrs
+          </td>
+        </tr>
+        <% }) %>
+    </tbody>
+  </table>
 
-<script>
-  function filterTable() {
-    const input = document.getElementById("searchInput").value.toLowerCase();
-    const rows = document.querySelectorAll("#userTable tbody tr");
-    rows.forEach(row => {
-      row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
-    });
-  }
-</script>
+  <script>
+    function filterTable() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.querySelectorAll("#userTable tbody tr");
+      rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(input) ? '' : 'none';
+      });
+    }
+  </script>

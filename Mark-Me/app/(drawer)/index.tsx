@@ -14,11 +14,13 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import { forceLightMode } from "@/utils/forceLightMode";
 import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
 import { formatDuration } from '../../utils/formatDuration';
+import ProtectedRoute from '@/utils/ProtectedRoute';
 console.log("📱 index.tsx loaded");
 
 // Set notification behavior globally
@@ -369,216 +371,219 @@ export default function AuthAttendanceScreen() {
     const now = new Date();
     return format(now, 'EEE - dd MMM, yyyy');
   };
-
+  forceLightMode();
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ProtectedRoute>
+      <ScrollView contentContainerStyle={styles.container}>
 
-      {/* Session Conflict Modal */}
-      <Modal
-        visible={showSessionModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSessionModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Sorry</Text>
-            <Text style={styles.modalMessage}>
-              Do you want me to close the last session?
-            </Text>
-            <View style={styles.modalButtonRow}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.signOut]}
-                onPress={handleClosePreviousAndSignIn}
-              >
-                <Text style={styles.buttonText}>Close Session</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.signIn]}
-                onPress={handleKeepSession}
-              >
-                <Text style={styles.buttonText}>Keep Session</Text>
-              </TouchableOpacity>
+        {/* Session Conflict Modal */}
+        <Modal
+          visible={showSessionModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowSessionModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Sorry</Text>
+              <Text style={styles.modalMessage}>
+                Do you want me to close the last session?
+              </Text>
+              <View style={styles.modalButtonRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.signOut]}
+                  onPress={handleClosePreviousAndSignIn}
+                >
+                  <Text style={styles.buttonText}>Close Session</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.signIn]}
+                  onPress={handleKeepSession}
+                >
+                  <Text style={styles.buttonText}>Keep Session</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <View style={styles.card}>
-        <View>
-          <Text style={[styles.welcome]}>Welcome {userName}!</Text>
-          <Text style={styles.motivation}>{getMotivationalText()}</Text>
-        </View>
+        <View style={styles.card}>
+          <View>
+            <Text style={[styles.welcome]}>Welcome {userName}!</Text>
+            <Text style={styles.motivation}>{getMotivationalText()}</Text>
+          </View>
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.signIn]}
-            onPress={handleSignIn}
-          >
-            <Text style={styles.buttonText}>SIGN IN</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.button, styles.signIn]}
+              onPress={handleSignIn}
+            >
+              <Text style={styles.buttonText}>SIGN IN</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.signOut]}
-            onPress={handleSignOut}
-          >
-            <Text style={styles.buttonText}>SIGN OUT</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.button, styles.signOut]}
+              onPress={handleSignOut}
+            >
+              <Text style={styles.buttonText}>SIGN OUT</Text>
+            </TouchableOpacity>
+          </View>
 
-        <Text style={styles.dateHeading}>{formatDateTitle()}</Text>
+          <Text style={styles.dateHeading}>{formatDateTitle()}</Text>
 
-        {/* Today's Record */}
-        {(() => {
-          const today = new Date().toDateString();
-          const todaysRecord = attendance.find((record) => {
-            const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
-            return date === today;
-          });
+          {/* Today's Record */}
+          {(() => {
+            const today = new Date().toDateString();
+            const todaysRecord = attendance.find((record) => {
+              const date = new Date(record.signedInAt || record.signedOutAt || '').toDateString();
+              return date === today;
+            });
 
-          if (!todaysRecord) {
-            return <Text style={styles.noToday}>No attendance record for today.</Text>;
-          }
+            if (!todaysRecord) {
+              return <Text style={styles.noToday}>No attendance record for today.</Text>;
+            }
 
-          const signedIn = todaysRecord.signedInAt
-            ? new Date(todaysRecord.signedInAt).toLocaleTimeString()
-            : '-';
-          const signedOut = todaysRecord.signedOutAt
-            ? new Date(todaysRecord.signedOutAt).toLocaleTimeString()
-            : '-';
+            const signedIn = todaysRecord.signedInAt
+              ? new Date(todaysRecord.signedInAt).toLocaleTimeString()
+              : '-';
+            const signedOut = todaysRecord.signedOutAt
+              ? new Date(todaysRecord.signedOutAt).toLocaleTimeString()
+              : '-';
 
-          return (
-            <View style={styles.tableContainer}>
-              <View style={styles.recordBlock}>
-                <View style={styles.recordRow}>
-                  <View style={styles.recordColumn}>
-                    <Text style={styles.largeColumnTitle}>Signed In</Text>
-                    <Text style={styles.columnValue}>{signedIn}</Text>
+            return (
+              <View style={styles.tableContainer}>
+                <View style={styles.recordBlock}>
+                  <View style={styles.recordRow}>
+                    <View style={styles.recordColumn}>
+                      <Text style={styles.largeColumnTitle}>Signed In</Text>
+                      <Text style={styles.columnValue}>{signedIn}</Text>
+                    </View>
+                    <View style={styles.recordColumn}>
+                      <Text style={styles.largeColumnTitle}>Signed Out</Text>
+                      <Text style={styles.columnValue}>{signedOut}</Text>
+                    </View>
                   </View>
-                  <View style={styles.recordColumn}>
-                    <Text style={styles.largeColumnTitle}>Signed Out</Text>
-                    <Text style={styles.columnValue}>{signedOut}</Text>
-                  </View>
+                  {!isTimerRunning && todaysRecord.timeWorked != null && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                        Time Worked Today:{' '}
+                        <Text style={{ fontWeight: 'bold' }}>
+                          {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
+                        </Text>
+                      </Text>
+                    </View>
+                  )}
+
                 </View>
-                {!isTimerRunning && todaysRecord.timeWorked != null && (
+
+
+                {/* 🕒 TIMER DISPLAY */}
+                {isTimerRunning && (
                   <View style={{ marginTop: 10 }}>
-                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                      Time Worked Today:{' '}
-                      <Text style={{ fontWeight: 'bold' }}>
-                        {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
+                    {isTimerRunning ? (
+                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                        Time Since Sign In:{' '}
+                        <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
                       </Text>
-                    </Text>
+                    ) : todaysRecord ? (
+                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
+                        Total Time Worked:{' '}
+                        <Text style={{ fontWeight: 'bold' }}>
+                          {todaysRecord.signedInAt
+                            ? formatDuration(todaysRecord.signedInAt, todaysRecord.signedOutAt)
+                            : "--"}
+                        </Text>
+                      </Text>
+                    ) : null}
                   </View>
+
                 )}
-
               </View>
+            );
+          })()}
 
+          {/* 📝 Today’s Log Section */}        <Text style={styles.subtitle}>Today&apos;s Log</Text>        {(() => { const today = new Date().toDateString(); const todaysRecords = attendance.filter((rec) => { const date = new Date(rec.signedInAt || rec.signedOutAt || "").toDateString(); return date === today; }); if (todaysRecords.length === 0) { return <Text style={styles.noToday}>No log entries for today.</Text>; } return (<View style={styles.tableContainer}>              {todaysRecords.map((rec) => { const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : "--"; const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : "--"; const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>); })}            </View>); })()}
 
-              {/* 🕒 TIMER DISPLAY */}
-              {isTimerRunning && (
-                <View style={{ marginTop: 10 }}>
-                  {isTimerRunning ? (
-                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                      Time Since Sign In:{' '}
-                      <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-                    </Text>
-                  ) : todaysRecord ? (
-                    <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                      Total Time Worked:{' '}
-                      <Text style={{ fontWeight: 'bold' }}>
-                        {todaysRecord.signedInAt
-                          ? formatDuration(todaysRecord.signedInAt, todaysRecord.signedOutAt)
-                          : "--"}
-                      </Text>
-                    </Text>
-                  ) : null}
-                </View>
+          <Text style={styles.subtitle}>This Week's Attendance</Text>
 
-              )}
-            </View>
-          );
-        })()}
+          {loading ? (
+            <ActivityIndicator size="small" color="#888" />
+          ) : attendance.length === 0 ? (
+            <Text>No records found.</Text>
+          ) : (
+            <View style={styles.tableContainer}>
+              {groupAttendanceByDate(attendance).map(({ dateKey, date, sessions }) => {
+                const formattedDate = format(date, 'EEE - dd MMM, yyyy');
+                const expanded = expandedDays[dateKey];
+                const latest = sessions[0];
+                const rest = sessions.slice(1);
 
-        {/* 📝 Today’s Log Section */}        <Text style={styles.subtitle}>Today&apos;s Log</Text>        {(() => { const today = new Date().toDateString(); const todaysRecords = attendance.filter((rec) => { const date = new Date(rec.signedInAt || rec.signedOutAt || "").toDateString(); return date === today; }); if (todaysRecords.length === 0) { return <Text style={styles.noToday}>No log entries for today.</Text>; } return (<View style={styles.tableContainer}>              {todaysRecords.map((rec) => { const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : "--"; const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : "--"; const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>); })}            </View>); })()}
+                const renderRow = (rec: AttendanceRecord) => {
+                  const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
+                  const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
+                  const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
+                  return (
+                    <View
+                      key={rec._id}
+                      style={[
+                        styles.recordRow,
+                        { backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
+                      ]}
+                    >
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
+                      </View>
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
+                      </View>
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>
+                      </View>
+                    </View>
+                  );
+                };
 
-        <Text style={styles.subtitle}>This Week's Attendance</Text>
-
-        {loading ? (
-          <ActivityIndicator size="small" color="#888" />
-        ) : attendance.length === 0 ? (
-          <Text>No records found.</Text>
-        ) : (
-          <View style={styles.tableContainer}>
-            {groupAttendanceByDate(attendance).map(({ dateKey, date, sessions }) => {
-              const formattedDate = format(date, 'EEE - dd MMM, yyyy');
-              const expanded = expandedDays[dateKey];
-              const latest = sessions[0];
-              const rest = sessions.slice(1);
-
-              const renderRow = (rec: AttendanceRecord) => {
-                const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
-                const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
-                const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
                 return (
-                  <View
-                    key={rec._id}
-                    style={[
-                      styles.recordRow,
-                      { backgroundColor: '#ffffff', paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
-                    ]}
-                  >
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>
+                  <View key={dateKey} style={styles.recordBlock}>
+                    <View style={sessions.length > 1 ? { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } : { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={sessions.length > 1 ? { display: "flex" } : { display: "none" }}></Text>
+                      <Text style={styles.recordDate}>{formattedDate}</Text>
+                      {sessions.length > 1 && (
+                        <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
+                          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9' }}>
+                            {expanded ? '✕' : '⋮'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>
+
+                    {/* header row */}
+                    <View style={[styles.largeRecordRow, { marginBottom: 8, paddingVertical: 8 }]}>
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekColumnTitle}>Signed In</Text>
+                      </View>
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekColumnTitle}>Signed Out</Text>
+                      </View>
+                      <View style={styles.largeColumn}>
+                        <Text style={styles.weekColumnTitle}>Time Worked</Text>
+                      </View>
                     </View>
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekLargeColumnValue}>{duration}</Text>
-                    </View>
+
+                    {/* always show latest */}
+                    {latest && renderRow(latest)}
+
+                    {/* show rest only if expanded */}
+                    {expanded && rest.map(renderRow)}
                   </View>
                 );
-              };
+              })}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </ProtectedRoute>
 
-              return (
-                <View key={dateKey} style={styles.recordBlock}>
-                  <View style={sessions.length > 1 ? { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' } : { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={sessions.length > 1 ? { display: "flex" } : { display: "none" }}></Text>
-                    <Text style={styles.recordDate}>{formattedDate}</Text>
-                    {sessions.length > 1 && (
-                      <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9' }}>
-                          {expanded ? '✕' : '⋮'}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* header row */}
-                  <View style={[styles.largeRecordRow, { marginBottom: 8, paddingVertical: 8 }]}>
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekColumnTitle}>Signed In</Text>
-                    </View>
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekColumnTitle}>Signed Out</Text>
-                    </View>
-                    <View style={styles.largeColumn}>
-                      <Text style={styles.weekColumnTitle}>Time Worked</Text>
-                    </View>
-                  </View>
-
-                  {/* always show latest */}
-                  {latest && renderRow(latest)}
-
-                  {/* show rest only if expanded */}
-                  {expanded && rest.map(renderRow)}
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </View>
-    </ScrollView>
   );
 }
 

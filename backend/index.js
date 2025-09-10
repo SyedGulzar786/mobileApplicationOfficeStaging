@@ -124,6 +124,31 @@ app.get('/dashboard', requireAdminAuth, async (req, res) => {
   res.render('dashboard', { title: 'Dashboard', users });
 });
 
+// ✅ User-specific attendance view
+app.get('/admin/users/:id/attendance', requireAdminAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    const records = await Attendance.find({ userId: user._id })
+      .sort({ date: -1 });
+
+    res.render('attendance', {
+      title: `Attendance – ${user.name}`,
+      records,
+      users: [user], // keep structure for form dropdown
+      filters: {},
+      singleUser: true,
+      selectedUser: user,
+    });
+  } catch (err) {
+    console.error('Error fetching user attendance:', err);
+    res.status(500).send('Server error');
+  }
+});
+
 // Users CRUD
 app.get('/admin/users', requireAdminAuth, async (req, res) => {
   const users = await User.find();
@@ -180,7 +205,16 @@ app.post('/admin/users/:id/delete', requireAdminAuth, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
   res.redirect('/admin/users');
 });
-
+// 🚨 Delete All Users (except admin)
+app.post('/admin/users/delete-all', requireAdminAuth, async (req, res) => {
+  try {
+    await User.deleteMany({ email: { $ne: process.env.ADMIN_EMAIL } });
+    res.redirect('/admin/users');
+  } catch (err) {
+    console.error('Error deleting all users:', err);
+    res.status(500).send('Failed to delete all users');
+  }
+});
 app.post('/admin/users/:id/working-hours', requireAdminAuth, async (req, res) => {
   const { workingHours } = req.body;
   try {
@@ -255,6 +289,16 @@ app.post('/admin/attendance/:id/delete', requireAdminAuth, async (req, res) => {
   res.redirect('/admin/attendance');
 });
 
+// 🚨 Delete All Attendance Records
+app.post('/admin/attendance/delete-all', requireAdminAuth, async (req, res) => {
+  try {
+    await Attendance.deleteMany({});
+    res.redirect('/admin/attendance');
+  } catch (err) {
+    console.error('Error deleting all attendance records:', err);
+    res.status(500).send('Failed to delete all attendance records');
+  }
+});
 app.post('/admin/attendance/:id/edit', requireAdminAuth, async (req, res) => {
   const { date, signedInAt, signedOutAt } = req.body;
 
@@ -392,9 +436,9 @@ app.post('/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    const responsePayload = { 
-      token, 
-      user: { id: user._id, name: user.name, email: user.email } 
+    const responsePayload = {
+      token,
+      user: { id: user._id, name: user.name, email: user.email }
     };
 
     console.log('[LOGIN] Login successful. Response payload:', responsePayload);

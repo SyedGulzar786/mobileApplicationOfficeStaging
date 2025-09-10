@@ -1,16 +1,16 @@
 {
   "expo": {
-"name": "Mark Me",
-"slug": "MyMobileApp",
+    "name": "Mark Me",
+    "slug": "MyMobileApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "markme",
-
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "light"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,8 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-"package": "com.syedgulzar786.markme"
-
+      "package": "com.syedgulzar786.markme",
+      "userInterfaceStyle": "light"
     },
     "web": {
       "bundler": "metro",
