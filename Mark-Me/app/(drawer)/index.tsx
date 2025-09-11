@@ -580,20 +580,28 @@ export default function AuthAttendanceScreen() {
 
                 return (
                   <View key={dateKey} style={styles.recordBlock}>
-                    <View style={sessions.length > 1 ? { flexDirection: 'row', alignItems: 'center', position:"relative",justifyContent:"center" } : { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-
+                    <View
+                      style={[
+                        {
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        },
+                        sessions.length > 1 && { position: "relative" },
+                      ]}
+                    >
                       <Text
                         style={[
                           styles.recordDate,
-                          { position: sessions.length > 1 ?  "absolute" : "relative" , textAlign:"center" }
+                          { textAlign: "center" },
+                          sessions.length > 1 && { position: "absolute" },
                         ]}
                       >
                         {formattedDate} {"\n"}
                       </Text>
-                      <Text style={{ display: "flex", alignItems: "center", marginStart: "auto" , marginBottom:10}}>
+                      <Text style={{ display: "flex", alignItems: "center", marginStart: "auto", marginBottom: 10 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: "#27ae60", marginEnd: 10 }}>
-                          {/* Total: */}
-                          {formatTotalDuration(computeTotalWorkedSeconds(sessions))}
+                          Total: {formatTotalDuration(computeTotalWorkedSeconds(sessions))}
                         </Text>
                         {sessions.length > 1 && (
                           <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
