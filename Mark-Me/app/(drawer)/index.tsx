@@ -296,6 +296,9 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed in');
       await AsyncStorage.setItem('signedInStatus', 'true');
+      if (user?.userId) {
+        await AsyncStorage.setItem('sessionUserId', user.userId);
+      }
       fetchLast7Days();
       setElapsedSeconds(0);
       setIsTimerRunning(true);
@@ -307,8 +310,9 @@ export default function AuthAttendanceScreen() {
 
   const handleSignIn = async () => {
     const currentStatus = await AsyncStorage.getItem('signedInStatus');
-    if (currentStatus === 'true') {
-      // Session already active → show modal instead of signing in
+    const sessionOwnerId = await AsyncStorage.getItem('sessionUserId');
+    if (currentStatus === 'true' && sessionOwnerId === user?.userId) {
+      // Session already active for THIS user → show modal
       setShowSessionModal(true);
       setPendingSignIn(true);
       return;
@@ -352,6 +356,7 @@ export default function AuthAttendanceScreen() {
 
       Alert.alert('Success', data.message || 'Signed out');
       await AsyncStorage.setItem('signedInStatus', 'false');
+      await AsyncStorage.removeItem('sessionUserId');
       fetchLast7Days();
       setIsTimerRunning(false);
     } catch (err) {
@@ -488,7 +493,7 @@ export default function AuthAttendanceScreen() {
                   {!isTimerRunning && todaysRecord.timeWorked != null && (
                     <View style={{ marginTop: 10 }}>
                       <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                        Time Worked Today:{' '}
+                        Time Worked:{' '}
                         <Text style={{ fontWeight: 'bold' }}>
                           {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
                         </Text>
