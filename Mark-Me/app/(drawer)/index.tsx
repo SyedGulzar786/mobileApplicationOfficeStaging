@@ -588,7 +588,7 @@ export default function AuthAttendanceScreen() {
                     <View
                       style={[
                         {
-                          flexDirection: "row",
+                          display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                         },
@@ -598,19 +598,19 @@ export default function AuthAttendanceScreen() {
                       <Text
                         style={[
                           styles.recordDate,
-                          { textAlign: "center" },
-                          sessions.length > 1 && { position: "absolute" },
+                          { textAlign: "center", 
+                           position:"absolute"}
                         ]}
                       >
                         {formattedDate} {"\n"}
                       </Text>
                       <Text style={{ display: "flex", alignItems: "center", marginStart: "auto", marginBottom: 10 }}>
-                        <Text style={{ fontSize: 20, fontWeight: 'bold', color: "#27ae60", marginEnd: 10 }}>
-                          Total: {formatTotalDuration(computeTotalWorkedSeconds(sessions))}
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: "#27ae60" }}>
+                          : {formatTotalDuration(computeTotalWorkedSeconds(sessions))}
                         </Text>
                         {sessions.length > 1 && (
                           <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9' }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginStart:10 }}>
                               {expanded ? '✕' : '⋮'}
                             </Text>
                           </TouchableOpacity>
