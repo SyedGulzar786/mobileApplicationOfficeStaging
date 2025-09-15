@@ -600,12 +600,14 @@ mongoose.connect(process.env.MONGO_URI)
         const allUsers = await User.find();
 
         for (const user of allUsers) {
-          const alreadyMarked = await Attendance.findOne({
+          // ✅ Check if user has signed in at least once today
+          const hasSignedIn = await Attendance.exists({
             userId: user._id,
-            date: today
+            date: today,
+            signedInAt: { $ne: null }
           });
 
-          if (!alreadyMarked) {
+          if (!hasSignedIn) {
             await Attendance.create({
               userId: user._id,
               date: today,
