@@ -1,5 +1,6 @@
 require('dotenv').config();
-const moment = require('moment');
+// Use moment-timezone for timezone-aware operations
+const moment = require('moment-timezone');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -453,14 +454,29 @@ app.post('/login', async (req, res) => {
 });
 
 // ✅ Sign In (always creates a new session)
+// ✅ Sign In (always creates a new session) - TIMEZONE AWARE
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const now = new Date();
 
-    // normalize date to midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Accept timezone from multiple sources (body, query, or header)
+    const tz = req.body.timezone || req.query.timezone || req.headers['x-user-tz'] || req.headers['x-timezone'] || 'UTC';
+
+    // Compute "now" in user's timezone, and the user's local midnight
+    const userNow = moment.tz(tz);
+    const localMidnight = userNow.clone().startOf('day');
+
+    // Convert to JS Date objects (these represent instants in UTC that correspond to user's local times)
+    const now = userNow.toDate();
+    const today = localMidnight.toDate();
+
+    // Optionally: store the user's timezone on their profile for cron checks later
+    // (requires adding timezone field to User schema if you want persistence)
+    try {
+      await User.findByIdAndUpdate(userId, { $set: { timezone: tz } });
+    } catch (e) {
+      console.warn('Could not persist user timezone:', e.message || e);
+    }
 
     // Always create a new session (no duplicate check)
     const attendance = new Attendance({
@@ -477,18 +493,26 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
   }
 });
 
-
 // ✅ Sign Out (close the latest open session for today)
+// ✅ Sign Out (close the latest open session for user's local today) - TIMEZONE AWARE
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const now = new Date();
 
-    // normalize date to midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Accept timezone from body/query/header; fall back to the user's stored timezone if available
+    let tz = req.body.timezone || req.query.timezone || req.headers['x-user-tz'] || req.headers['x-timezone'];
+    if (!tz) {
+      const userDoc = await User.findById(userId);
+      tz = userDoc && userDoc.timezone ? userDoc.timezone : 'UTC';
+    }
 
-    // Find the latest session for today that is still open
+    const userNow = moment.tz(tz);
+    const localMidnight = userNow.clone().startOf('day');
+
+    const now = userNow.toDate();
+    const today = localMidnight.toDate();
+
+    // Find the latest session for the user's local "today" that is still open
     const attendance = await Attendance.findOne({
       userId,
       date: today,
@@ -501,7 +525,7 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
 
     attendance.signedOutAt = now;
 
-    // calculate worked hours
+    // calculate worked hours (in hours)
     if (attendance.signedInAt) {
       const diffMs = now - attendance.signedInAt;
       attendance.timeWorked = diffMs / (1000 * 60 * 60); // hours
@@ -516,18 +540,22 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
   }
 });
 
-
 app.get('/today', async (req, res) => {
   try {
-    const todayStart = new Date().setHours(0, 0, 0, 0);
-    const todayEnd = new Date().setHours(23, 59, 59, 999);
+    // Accept optional timezone (query or header). If missing, default to UTC.
+    const tz = req.query.timezone || req.headers['x-user-tz'] || req.headers['x-timezone'] || 'UTC';
+
+    // compute start/end of local day in UTC-instant form
+    const startLocal = moment.tz(tz).startOf('day').toDate();
+    const endLocal = moment.tz(tz).endOf('day').toDate();
 
     const records = await Attendance.find({
-      date: { $gte: todayStart, $lte: todayEnd },
+      date: { $gte: startLocal, $lte: endLocal },
     }).populate('userId');
 
     res.json(records);
   } catch (err) {
+    console.error('Error fetching /today:', err);
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
 });
@@ -591,32 +619,42 @@ mongoose.connect(process.env.MONGO_URI)
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server is running at http://localhost:${PORT}`);
     });
-    // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In
+    
+    // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In (timezone-aware per user)
     cron.schedule('5 0 * * *', async () => {
       try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Normalize to start of day
-
         const allUsers = await User.find();
 
         for (const user of allUsers) {
-          // ✅ Check if user has signed in at least once today
+          // Determine the user's timezone. Prefer stored user.timezone; otherwise skip marking absent
+          const tz = user.timezone;
+          if (!tz) {
+            console.log(`⏭️ Skipping absent check for ${user.name} — no timezone set. Consider collecting/storing timezone on sign-in.`);
+            continue;
+          }
+
+          // Compute that user's local "today" range (midnight -> next midnight)
+          const localStart = moment.tz(tz).startOf('day').toDate();
+          const localEnd = moment.tz(tz).endOf('day').toDate();
+
+          // Check if user has any attendance entry for that local date with a non-null signedInAt
           const hasSignedIn = await Attendance.exists({
             userId: user._id,
-            date: today,
+            date: { $gte: localStart, $lte: localEnd },
             signedInAt: { $ne: null }
           });
 
           if (!hasSignedIn) {
+            // create an absent record normalized to the user's local midnight (converted to UTC instant)
             await Attendance.create({
               userId: user._id,
-              date: today,
+              date: localStart,
               signedInAt: null,
               signedOutAt: null,
               timeWorked: 0
             });
 
-            console.log(`📌 Marked absent: ${user.name}`);
+            console.log(`📌 Marked absent: ${user.name} (tz: ${tz})`);
           }
         }
 
