@@ -456,7 +456,8 @@ app.post('/login', async (req, res) => {
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const now = new Date();
+    const { timezone = "Asia/Karachi" } = req.body;
+    const now = new Date(); // store in UTC
 
     // normalize date to midnight
     const today = new Date();
@@ -470,7 +471,13 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
     });
 
     await attendance.save();
-    return res.status(201).json({ message: 'Signed in successfully', attendance });
+    return res.status(201).json({
+      message: 'Signed in successfully',
+      attendance: {
+        ...attendance.toObject(),
+        signedInAt: require("moment-timezone")(attendance.signedInAt).tz(timezone).format(),
+      },
+    });
   } catch (err) {
     console.error('Signin error:', err);
     return res.status(500).json({ message: 'Server error' });
@@ -482,7 +489,8 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const now = new Date();
+    const { timezone = "Asia/Karachi" } = req.body;
+    const now = new Date(); // store in UTC
 
     // normalize date to midnight
     const today = new Date();
@@ -509,7 +517,14 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
 
     await attendance.save();
 
-    return res.status(200).json({ message: 'Signed out successfully', attendance });
+    return res.status(200).json({
+      message: 'Signed out successfully',
+      attendance: {
+        ...attendance.toObject(),
+        signedInAt: require("moment-timezone")(attendance.signedInAt).tz(timezone).format(),
+        signedOutAt: require("moment-timezone")(attendance.signedOutAt).tz(timezone).format(),
+      },
+    });
   } catch (err) {
     console.error('Signout error:', err);
     return res.status(500).json({ message: 'Server error' });
