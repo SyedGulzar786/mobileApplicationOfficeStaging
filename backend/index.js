@@ -15,6 +15,7 @@ const User = require('./models/User');
 const Attendance = require('./models/Attendance');
 
 const app = express();
+const { formatAttendanceRecord } = require('./utils/timezone');
 
 // Middleware
 app.use(express.json());
@@ -456,11 +457,9 @@ app.post('/login', async (req, res) => {
 app.post('/attendance/signin', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
+    // Always store UTC time
     const now = new Date();
-
-    // normalize date to midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     // Always create a new session (no duplicate check)
     const attendance = new Attendance({
@@ -482,11 +481,9 @@ app.post('/attendance/signin', authMiddleware, async (req, res) => {
 app.post('/attendance/signout', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
+    // Always store UTC time
     const now = new Date();
-
-    // normalize date to midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
     // Find the latest session for today that is still open
     const attendance = await Attendance.findOne({
@@ -526,7 +523,8 @@ app.get('/today', async (req, res) => {
       date: { $gte: todayStart, $lte: todayEnd },
     }).populate('userId');
 
-    res.json(records);
+    const formatted = records.map(r => formatAttendanceRecord(r, r.userId?.timezone || "Asia/Karachi"));
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
@@ -544,7 +542,8 @@ app.get('/users', async (req, res) => {
 app.get('/attendance', async (req, res) => {
   try {
     const records = await Attendance.find().populate('userId');
-    res.json(records);
+    const formatted = records.map(r => formatAttendanceRecord(r, r.userId?.timezone || "Asia/Karachi"));
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
@@ -554,8 +553,12 @@ app.get('/attendance', async (req, res) => {
 app.get('/attendance/me', authMiddleware, async (req, res) => {
   try {
     const records = await Attendance.find({ userId: req.user.id })
-      .sort({ date: -1 }); // latest first
-    res.json(records);
+      .populate('userId')
+      .sort({ date: -1 });
+
+    const timezone = records[0]?.userId?.timezone || "Asia/Karachi";
+    const formatted = records.map(r => formatAttendanceRecord(r, r.userId?.timezone || timezone));
+    res.json(formatted);
   } catch (err) {
     console.error('Error fetching user attendance:', err.message);
     res.status(500).json({ error: 'Failed to fetch attendance' });
@@ -572,7 +575,8 @@ app.get('/attendance/week', authMiddleware, async (req, res) => {
       date: { $gte: weekStarts },
     }).populate('userId');
 
-    res.json(records);
+    const formatted = records.map(r => formatAttendanceRecord(r, r.userId?.timezone || "Asia/Karachi"));
+    res.json(formatted);
   } catch (err) {
     console.error('Error fetching weekly attendance:', err.message);
     res.status(500).json({ error: 'Failed to fetch attendance' });
