@@ -19,7 +19,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { format } from 'date-fns';
 import { API_BASE_URL, ALLOWED_IP } from '../../constants/env';
-import moment from "moment-timezone";
 import { formatDuration } from '../../utils/formatDuration';
 import ProtectedRoute from '@/utils/ProtectedRoute';
 console.log("📱 index.tsx loaded");
@@ -61,10 +60,9 @@ export default function AuthAttendanceScreen() {
   const [loading, setLoading] = useState(false);
   const [hasFetchedInitially, setHasFetchedInitially] = useState(false);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const [pendingSignIn, setPendingSignIn] = useState(false);
 
-  console.log("🌍 Detected timezone:", timezone);
+
 
   // Track expanded/collapsed state of each day
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
@@ -230,10 +228,8 @@ export default function AuthAttendanceScreen() {
       setLoading(true);
 
       const res = await fetch(`${API}/attendance/week`, {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${activeToken}`,
-          "x-timezone": timezone,
         },
       });
 
@@ -287,7 +283,6 @@ export default function AuthAttendanceScreen() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ timezone }),
         credentials: 'include',
       });
       console.log('📥 Sign In response status:', res.status);
@@ -347,7 +342,6 @@ export default function AuthAttendanceScreen() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ timezone }),
         credentials: 'include',
       });
 
@@ -405,20 +399,6 @@ export default function AuthAttendanceScreen() {
     return format(now, 'EEE - dd MMM, yyyy');
   };
   forceLightMode();
-
-  // 🌍 Timezone-aware helpers
-  const userTimeZone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Karachi";
-
-  const formatTimeTZ = (dt?: string | Date) => {
-    if (!dt) return "—";
-    return moment(dt).tz(userTimeZone).format("hh:mm A");
-  };
-
-  const formatDateTZ = (dt?: string | Date) => {
-    if (!dt) return "";
-    return moment(dt).tz(userTimeZone).format("ddd - DD MMM, YYYY");
-  };
   return (
     <ProtectedRoute>
       <ScrollView contentContainerStyle={styles.container}>
@@ -491,11 +471,11 @@ export default function AuthAttendanceScreen() {
             }
 
             const signedIn = todaysRecord.signedInAt
-              ? formatTimeTZ(todaysRecord.signedInAt)
-              : '—';
+              ? new Date(todaysRecord.signedInAt).toLocaleTimeString()
+              : '-';
             const signedOut = todaysRecord.signedOutAt
-              ? formatTimeTZ(todaysRecord.signedOutAt)
-              : '—';
+              ? new Date(todaysRecord.signedOutAt).toLocaleTimeString()
+              : '-';
 
             return (
               <View style={styles.tableContainer}>
@@ -560,15 +540,7 @@ export default function AuthAttendanceScreen() {
                   </Text>
                 </Text>
               </View>
-              {todaysRecords.map((rec) => {
-                const signedIn = rec.signedInAt
-                  ? formatTimeTZ(rec.signedInAt)
-                  : "—";
-                const signedOut = rec.signedOutAt
-                  ? formatTimeTZ(rec.signedOutAt)
-                  : "—";
-                const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>);
-              })}            </View>);
+              {todaysRecords.map((rec) => { const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : "--"; const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : "--"; const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>); })}            </View>);
           })()}
 
 
@@ -581,14 +553,14 @@ export default function AuthAttendanceScreen() {
           ) : (
             <View style={styles.tableContainer}>
               {groupAttendanceByDate(attendance).map(({ dateKey, date, sessions }) => {
-                const formattedDate = formatDateTZ(date);
+                const formattedDate = format(date, 'EEE - dd MMM, yyyy');
                 const expanded = expandedDays[dateKey];
                 const latest = sessions[0];
                 const rest = sessions.slice(1);
 
                 const renderRow = (rec: AttendanceRecord) => {
-                  const signedIn = rec.signedInAt ? formatTimeTZ(rec.signedInAt) : '—';
-                  const signedOut = rec.signedOutAt ? formatTimeTZ(rec.signedOutAt) : '—';
+                  const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : '—';
+                  const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : '—';
                   const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : '—';
                   return (
                     <View
@@ -626,10 +598,8 @@ export default function AuthAttendanceScreen() {
                       <Text
                         style={[
                           styles.recordDate,
-                          {
-                            textAlign: "center",
-                            position: "absolute"
-                          }
+                          { textAlign: "center", 
+                           position:"absolute"}
                         ]}
                       >
                         {formattedDate} {"\n"}
@@ -640,7 +610,7 @@ export default function AuthAttendanceScreen() {
                         </Text>
                         {sessions.length > 1 && (
                           <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginStart: 10 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginStart:10 }}>
                               {expanded ? '✕' : '⋮'}
                             </Text>
                           </TouchableOpacity>
