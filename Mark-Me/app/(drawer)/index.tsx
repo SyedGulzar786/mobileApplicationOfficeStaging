@@ -492,11 +492,8 @@ export default function AuthAttendanceScreen() {
                   </View>
                   {!isTimerRunning && todaysRecord.timeWorked != null && (
                     <View style={{ marginTop: 10 }}>
-                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                        Time Worked:{' '}
-                        <Text style={{ fontWeight: 'bold' }}>
-                          {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
-                        </Text>
+                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50', fontWeight: 'bold' }}>
+                        Time Worked: {formatDuration(todaysRecord.signedInAt!, todaysRecord.signedOutAt!)}
                       </Text>
                     </View>
                   )}
@@ -508,10 +505,11 @@ export default function AuthAttendanceScreen() {
                 {isTimerRunning && (
                   <View style={{ marginTop: 10 }}>
                     {isTimerRunning ? (
-                      <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
-                        Time Since Sign In:{' '}
-                        <Text style={{ fontWeight: 'bold' }}>{formatTime(elapsedSeconds)}</Text>
-                      </Text>
+                      <View style={{ marginTop: 10 }}>
+                        <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50', fontWeight: 'bold' }}>
+                          Time Since Sign In: {formatTime(elapsedSeconds)}
+                        </Text>
+                      </View>
                     ) : todaysRecord ? (
                       <Text style={{ textAlign: 'center', fontSize: 18, color: '#2c3e50' }}>
                         Total Time Worked:{' '}
@@ -533,11 +531,8 @@ export default function AuthAttendanceScreen() {
             const today = new Date().toDateString(); const todaysRecords = attendance.filter((rec) => { const date = new Date(rec.signedInAt || rec.signedOutAt || "").toDateString(); return date === today; }); if (todaysRecords.length === 0) { return <Text style={styles.noToday}>No log entries for today.</Text>; } return (<View style={styles.tableContainer}>
               {/* 🔢 Show total for today before listing sessions */}
               <View style={{ marginBottom: 10 }}>
-                <Text style={{ textAlign: "center", fontSize: 18, color: "#2c3e50" }}>
-                  Total Time Today:{" "}
-                  <Text style={{ fontWeight: "bold" }}>
-                    {formatTotalDuration(computeTotalWorkedSeconds(todaysRecords))}
-                  </Text>
+                <Text style={{ textAlign: "center", fontSize: 18, color: "#2c3e50", fontWeight: "bold" }}>
+                  Total Time Today: {formatTotalDuration(computeTotalWorkedSeconds(todaysRecords))}
                 </Text>
               </View>
               {todaysRecords.map((rec) => { const signedIn = rec.signedInAt ? new Date(rec.signedInAt).toLocaleTimeString() : "--"; const signedOut = rec.signedOutAt ? new Date(rec.signedOutAt).toLocaleTimeString() : "--"; const duration = rec.signedInAt ? formatDuration(rec.signedInAt, rec.signedOutAt) : "--"; return (<View key={rec._id} style={styles.recordBlock}>                    <View style={styles.largeRecordRow}>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed In</Text>                        <Text style={styles.weekLargeColumnValue}>{signedIn}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Signed Out</Text>                        <Text style={styles.weekLargeColumnValue}>{signedOut}</Text>                      </View>                      <View style={styles.largeColumn}>                        <Text style={styles.weekColumnTitle}>Duration</Text>                        <Text style={styles.weekLargeColumnValue}>{duration}</Text>                      </View>                    </View>                  </View>); })}            </View>);
@@ -598,8 +593,10 @@ export default function AuthAttendanceScreen() {
                       <Text
                         style={[
                           styles.recordDate,
-                          { textAlign: "center", 
-                           position:"absolute"}
+                          {
+                            textAlign: "center",
+                            position: "absolute"
+                          }
                         ]}
                       >
                         {formattedDate} {"\n"}
@@ -610,7 +607,7 @@ export default function AuthAttendanceScreen() {
                         </Text>
                         {sessions.length > 1 && (
                           <TouchableOpacity onPress={() => toggleDayExpansion(dateKey)}>
-                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginStart:10 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#2980b9', marginStart: 10 }}>
                               {expanded ? '✕' : '⋮'}
                             </Text>
                           </TouchableOpacity>
