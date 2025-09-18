@@ -1,5 +1,5 @@
 require('dotenv').config();
-const moment = require('moment');
+const moment = require('moment-timezone');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -132,16 +132,39 @@ app.get('/admin/users/:id/attendance', requireAdminAuth, async (req, res) => {
       return res.status(404).send('User not found');
     }
 
+    // Use user's timezone if present, otherwise default to UTC
+    const timezone = user.timezone || 'UTC';
+
     const records = await Attendance.find({ userId: user._id })
       .sort({ date: -1 });
 
+    // Map mongoose docs -> plain objects and add _local fields for display
+    const localized = records.map(r => {
+      const obj = r.toObject();
+
+      obj._local = {
+        // date as YYYY-MM-DD for date pickers/inputs
+        dateISO: obj.date ? moment.tz(obj.date, timezone).format('YYYY-MM-DD') : null,
+        // friendly human date
+        datePretty: obj.date ? moment.tz(obj.date, timezone).format('MMM D, YYYY') : null,
+        // signed in/out in local timezone (readable)
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedInAtISO: obj.signedInAt ? moment.tz(obj.signedInAt, timezone).format('YYYY-MM-DDTHH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAtISO: obj.signedOutAt ? moment.tz(obj.signedOutAt, timezone).format('YYYY-MM-DDTHH:mm:ss') : null,
+      };
+
+      return obj;
+    });
+
     res.render('attendance', {
       title: `Attendance – ${user.name}`,
-      records,
-      users: [user], // keep structure for form dropdown
+      records: localized,          // pass localized records to EJS
+      users: [user],               // keep structure for form dropdown
       filters: {},
       singleUser: true,
       selectedUser: user,
+      userTimezone: timezone       // expose timezone if template needs it
     });
   } catch (err) {
     console.error('Error fetching user attendance:', err);
@@ -269,13 +292,31 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
   }
 
   const records = await Attendance.find(query)
-    .sort({ date: -1 })  // Sort by latest first
+    .sort({ date: -1 })
     .populate('userId');
-  const users = await User.find(); // ✅ REQUIRED
+  const users = await User.find();
+
+  // Localize each record based on its user's timezone
+  const localized = records.map(r => {
+    const obj = r.toObject();
+    const tz = obj.userId?.timezone || 'UTC';
+
+    obj._local = {
+      dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
+      datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
+      signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      signedInAtISO: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DDTHH:mm:ss') : null,
+      signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      signedOutAtISO: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DDTHH:mm:ss') : null,
+    };
+
+    return obj;
+  });
+
   res.render('attendance', {
     title: 'Attendance',
-    records,
-    users, // ✅ Pass to EJS
+    records: localized,
+    users,
     filters: {
       name: name || '',
       date: date || '',
@@ -516,7 +557,6 @@ app.post('/attendance/signout', authMiddleware, async (req, res) => {
   }
 });
 
-
 app.get('/today', async (req, res) => {
   try {
     const todayStart = new Date().setHours(0, 0, 0, 0);
@@ -526,7 +566,22 @@ app.get('/today', async (req, res) => {
       date: { $gte: todayStart, $lte: todayEnd },
     }).populate('userId');
 
-    res.json(records);
+    // Add localized fields for each record based on user's timezone
+    const localized = records.map(r => {
+      const obj = r.toObject();
+      const tz = obj.userId?.timezone || 'UTC';
+
+      obj._local = {
+        dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      };
+
+      return obj;
+    });
+
+    res.json(localized);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
@@ -544,7 +599,23 @@ app.get('/users', async (req, res) => {
 app.get('/attendance', async (req, res) => {
   try {
     const records = await Attendance.find().populate('userId');
-    res.json(records);
+
+    // Localize each record using the user's timezone
+    const localized = records.map(r => {
+      const obj = r.toObject();
+      const tz = obj.userId?.timezone || 'UTC';
+
+      obj._local = {
+        dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      };
+
+      return obj;
+    });
+
+    res.json(localized);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch attendance' });
   }
@@ -554,8 +625,26 @@ app.get('/attendance', async (req, res) => {
 app.get('/attendance/me', authMiddleware, async (req, res) => {
   try {
     const records = await Attendance.find({ userId: req.user.id })
-      .sort({ date: -1 }); // latest first
-    res.json(records);
+      .sort({ date: -1 });
+
+    // Determine the logged-in user's timezone
+    const user = await User.findById(req.user.id);
+    const tz = user?.timezone || 'UTC';
+
+    const localized = records.map(r => {
+      const obj = r.toObject();
+
+      obj._local = {
+        dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      };
+
+      return obj;
+    });
+
+    res.json(localized);
   } catch (err) {
     console.error('Error fetching user attendance:', err.message);
     res.status(500).json({ error: 'Failed to fetch attendance' });
@@ -568,11 +657,28 @@ app.get('/attendance/week', authMiddleware, async (req, res) => {
     const weekStarts = startOfWeek(new Date(), { weekStartsOn: 1 });
 
     const records = await Attendance.find({
-      userId: req.user.id, // ✅ filter by logged-in user
+      userId: req.user.id,
       date: { $gte: weekStarts },
     }).populate('userId');
 
-    res.json(records);
+    // Determine the logged-in user's timezone
+    const user = await User.findById(req.user.id);
+    const tz = user?.timezone || 'UTC';
+
+    const localized = records.map(r => {
+      const obj = r.toObject();
+
+      obj._local = {
+        dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      };
+
+      return obj;
+    });
+
+    res.json(localized);
   } catch (err) {
     console.error('Error fetching weekly attendance:', err.message);
     res.status(500).json({ error: 'Failed to fetch attendance' });
