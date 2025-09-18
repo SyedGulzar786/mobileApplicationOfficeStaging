@@ -33,6 +33,16 @@
         <input type="hidden" name="workingHours" id="workingHoursField" />
       </div>
       <div class="col">
+        <select name="timezone" class="form-select" required>
+          <option value="UTC">UTC</option>
+          <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+          <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+          <option value="Europe/London">Europe/London (GMT)</option>
+          <option value="America/New_York">America/New_York (EST)</option>
+          <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
+        </select>
+      </div>
+      <div class="col">
         <button type="submit" class="btn btn-primary">Add User</button>
       </div>
     </div>
@@ -46,6 +56,7 @@
         <th>Role</th>
         <th>Password</th>
         <th>Working Time</th>
+        <th>Timezone</th>
         <th>Created</th>
         <th>Actions</th>
       </tr>
@@ -80,6 +91,21 @@
               <input type="number" id="minutes-<%= user._id %>" name="workingHoursMinutes" value="<%= min %>"
                 class="form-control" style="width: 60px;" min="0" />
               <input type="hidden" name="workingHours" id="workingHoursField-<%= user._id %>" />
+            </td>
+            <td>
+              <select name="timezone" class="form-select">
+                <option value="UTC" <%=user.timezone==='UTC' ? 'selected' : '' %>>UTC</option>
+                <option value="Asia/Karachi" <%=user.timezone==='Asia/Karachi' ? 'selected' : '' %>>Asia/Karachi (PKT)
+                </option>
+                <option value="Asia/Dubai" <%=user.timezone==='Asia/Dubai' ? 'selected' : '' %>>Asia/Dubai (GST)
+                </option>
+                <option value="Europe/London" <%=user.timezone==='Europe/London' ? 'selected' : '' %>>Europe/London
+                  (GMT)</option>
+                <option value="America/New_York" <%=user.timezone==='America/New_York' ? 'selected' : '' %>
+                  >America/New_York (EST)</option>
+                <option value="America/Los_Angeles" <%=user.timezone==='America/Los_Angeles' ? 'selected' : '' %>
+                  >America/Los_Angeles (PST)</option>
+              </select>
             </td>
             <td>
               <%= new Date(user.createdAt).toLocaleDateString() %>

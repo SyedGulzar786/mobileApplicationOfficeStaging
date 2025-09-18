@@ -146,11 +146,11 @@ app.get('/admin/users/:id/attendance', requireAdminAuth, async (req, res) => {
         // date as YYYY-MM-DD for date pickers/inputs
         dateISO: obj.date ? moment.tz(obj.date, timezone).format('YYYY-MM-DD') : null,
         // friendly human date
-        datePretty: obj.date ? moment.tz(obj.date, timezone).format('MMM D, YYYY') : null,
+        datePretty: obj.date ? moment.tz(obj.date, timezone).format('ddd - MMM D, YYYY') : null,
         // signed in/out in local timezone (readable)
-        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, timezone).format('hh:mm A') : null,
         signedInAtISO: obj.signedInAt ? moment.tz(obj.signedInAt, timezone).format('YYYY-MM-DDTHH:mm:ss') : null,
-        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, timezone).format('YYYY-MM-DD HH:mm:ss') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, timezone).format('hh:mm A') : null,
         signedOutAtISO: obj.signedOutAt ? moment.tz(obj.signedOutAt, timezone).format('YYYY-MM-DDTHH:mm:ss') : null,
       };
 
@@ -179,7 +179,8 @@ app.get('/admin/users', requireAdminAuth, async (req, res) => {
 });
 
 app.post('/admin/users', requireAdminAuth, async (req, res) => {
-  const { name, email, password, role, workingHoursHours, workingHoursMinutes } = req.body;
+  const { name, email, password, role, workingHoursHours, workingHoursMinutes, timezone } = req.body;
+
   const safeHours = (workingHoursHours || '0').toString().padStart(2, '0');
   const safeMinutes = (workingHoursMinutes || '0').toString().padStart(2, '0');
   const formattedWorkingHours = `${safeHours}:${safeMinutes}`;
@@ -196,13 +197,14 @@ app.post('/admin/users', requireAdminAuth, async (req, res) => {
     passwordHashed: hashedPassword,
     role,
     workingHours: formattedWorkingHours,
+    timezone: timezone || 'UTC',
   });
 
   res.redirect('/admin/users');
 });
 
 app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
-  const { name, email, role, password, workingHoursHours, workingHoursMinutes } = req.body;
+  const { name, email, role, password, workingHoursHours, workingHoursMinutes, timezone } = req.body;
 
   const safeHours = (workingHoursHours !== undefined ? workingHoursHours : '0').toString().padStart(2, '0');
   const safeMinutes = (workingHoursMinutes !== undefined ? workingHoursMinutes : '0').toString().padStart(2, '0');
@@ -213,6 +215,7 @@ app.post('/admin/users/:id/edit', requireAdminAuth, async (req, res) => {
     email,
     role,
     workingHours: formattedWorkingHours,
+    timezone: timezone || 'UTC',
   };
 
   if (password && password.trim()) {
@@ -303,10 +306,10 @@ app.get('/admin/attendance', requireAdminAuth, async (req, res) => {
 
     obj._local = {
       dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
-      datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
-      signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      datePretty: obj.date ? moment.tz(obj.date, tz).format('ddd - MMM D, YYYY') : null,
+      signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('hh:mm A') : null,
       signedInAtISO: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DDTHH:mm:ss') : null,
-      signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+      signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('hh:mm A') : null,
       signedOutAtISO: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DDTHH:mm:ss') : null,
     };
 
@@ -573,9 +576,9 @@ app.get('/today', async (req, res) => {
 
       obj._local = {
         dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
-        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
-        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
-        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('ddd - MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('hh:mm A') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('hh:mm A') : null,
       };
 
       return obj;
@@ -607,9 +610,9 @@ app.get('/attendance', async (req, res) => {
 
       obj._local = {
         dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
-        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
-        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
-        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('ddd - MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('hh:mm A') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('hh:mm A') : null,
       };
 
       return obj;
@@ -636,9 +639,9 @@ app.get('/attendance/me', authMiddleware, async (req, res) => {
 
       obj._local = {
         dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
-        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
-        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
-        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('ddd - MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('hh:mm A') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('hh:mm A') : null,
       };
 
       return obj;
@@ -670,9 +673,9 @@ app.get('/attendance/week', authMiddleware, async (req, res) => {
 
       obj._local = {
         dateISO: obj.date ? moment.tz(obj.date, tz).format('YYYY-MM-DD') : null,
-        datePretty: obj.date ? moment.tz(obj.date, tz).format('MMM D, YYYY') : null,
-        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
-        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('YYYY-MM-DD HH:mm:ss') : null,
+        datePretty: obj.date ? moment.tz(obj.date, tz).format('ddd - MMM D, YYYY') : null,
+        signedInAt: obj.signedInAt ? moment.tz(obj.signedInAt, tz).format('hh:mm A') : null,
+        signedOutAt: obj.signedOutAt ? moment.tz(obj.signedOutAt, tz).format('hh:mm A') : null,
       };
 
       return obj;

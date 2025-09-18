@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     type: String,            // Changed from Number to String
     default: "09:00",        // Format: HH:mm
   },
+  timezone: {
+    type: String,
+    default: "UTC",          // Default to UTC if not set
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
