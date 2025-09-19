@@ -692,14 +692,15 @@ app.use((req, res) => {
   res.status(404).send('<h2>404 - Page Not Found</h2><a href="/">Go Home</a>');
 });
 
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+});
+
 // Connect Mongo
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Server is running at http://localhost:${PORT}`);
-    });
     // 🔁 Cron Job: Mark Absent for Users Who Didn’t Sign In
     cron.schedule('5 0 * * *', async () => {
       try {
